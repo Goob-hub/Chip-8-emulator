@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-struct chip8 {
+typedef struct {
     unsigned short opcode; //Current op code that determines what the emulator runs in its execution phase (Shouldnt be in state, should be in fetch loop when emulator is fetching from memory of program)
     unsigned char memory[4096]; //Limit for memory that chip-8 programs can use, basically the memory of the program not the chip8, this just specifies the limit.
     unsigned char V[16]; //General cpu registers
@@ -12,7 +12,7 @@ struct chip8 {
     unsigned short stack[16]; //Stores return addresses, where the chip8 goes back to after a call. Be weary of overflow. ignore it or add safety checks
     unsigned short sp; //Index of the next free slot in the stack. increases on call and decreases on return
     unsigned short key[16]; //emulator input state, emulator must map to actual keyboard
-};
+} chip8_t;
 
 // Chip 8 emulator simulates a cpu and interprets a fixed memory layout, it is not dynamic in this case. The memory is interpreted as instructions, the definition here just sets the limit that programs can be/use
 

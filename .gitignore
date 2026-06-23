@@ -54,3 +54,5 @@ dkms.conf
 build
 
 SDL3/
+
+.dwo
