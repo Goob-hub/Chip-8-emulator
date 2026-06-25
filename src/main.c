@@ -42,7 +42,12 @@ bool init_sdl(sdl_t *sdl, const config_t config) {
     return true;
 }
 
-// const int argc, const int **argv implement these variables later maybe. not sure what for though
+void init_chip8(chip8_t *chip8) {
+    chip8->delay_timer = 60;
+    chip8->sound_timer = 60;
+    chip8->cpu_hz = 700;
+}
+
 void setup_config(config_t *config) {
     *config = (config_t) {
         .window_width = 64,
@@ -57,15 +62,44 @@ void final_cleanup(const sdl_t sdl) {
     SDL_Quit();
 }
 
-// const int argc, const int **argv implement these variables later maybe. not sure what for though
-int main() {
-    // (void)argc;
-    // (void)argv;
+void fetch() {
+
+}
+
+void decode() {
+
+}
+
+void render(const config_t config, const sdl_t sdl) {
+    // This is how you draw shit in a nutshell    
+    SDL_FRect r;
+
+    r.h = 1 * config.window_scale;
+    r.w = 1 * config.window_scale;
+    r.x = 10 * config.window_scale;
+    r.y = 10 * config.window_scale;
+
+    SDL_SetRenderTarget(sdl.renderer, sdl.bitmapTexture);
+    SDL_SetRenderDrawColor(sdl.renderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_RenderClear(sdl.renderer);
+    SDL_RenderRect(sdl.renderer,&r);
+    SDL_SetRenderDrawColor(sdl.renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_RenderFillRect(sdl.renderer, &r);
+    SDL_SetRenderTarget(sdl.renderer, NULL);
+    SDL_RenderTexture(sdl.renderer, sdl.bitmapTexture, NULL, NULL);
+    SDL_RenderPresent(sdl.renderer);
+}
+
+// This function should handle timing with the timers, call the chip8 cycle by decoding opcodes from memory, and call a render function that renders the current chip8's gfx state. 
+int main(const int argc, const int **argv) {
+    (void)argc;
+    (void)argv;
     
     sdl_t sdl = {0};
     config_t config = {0};
+    chip8_t chip8 = {0};
+    unsigned int lastTime = 0;
     bool done = false;
-    SDL_FRect r;
 
     setup_config(&config);
 
@@ -73,6 +107,8 @@ int main() {
         SDL_Quit();
         exit(1);
     }
+
+    init_chip8(&chip8);
 
     while (!done) {
         SDL_Event event;
@@ -83,22 +119,12 @@ int main() {
             }
         }
 
-        // This is how you draw shit in a nutshell
-        r.h = 2 * config.window_scale;
-        r.w = 2 * config.window_scale;
-        r.x = 10 * config.window_scale;
-        r.y = 10 * config.window_scale;
+        unsigned int currentTime = SDL_GetTicks();
 
-        SDL_SetRenderTarget(sdl.renderer, sdl.bitmapTexture);
-        SDL_SetRenderDrawColor(sdl.renderer, 0x00, 0x00, 0x00, 0x00);
-        SDL_RenderClear(sdl.renderer);
-        SDL_RenderRect(sdl.renderer,&r);
-        SDL_SetRenderDrawColor(sdl.renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderFillRect(sdl.renderer, &r);
-        SDL_SetRenderTarget(sdl.renderer, NULL);
-        SDL_RenderTexture(sdl.renderer, sdl.bitmapTexture, NULL, NULL);
-        SDL_RenderPresent(sdl.renderer);
-
+        if(currentTime > lastTime + (1000 / chip8.cpu_hz)) {
+            fetch();
+            decode();
+        }
     }
 
     final_cleanup(sdl);

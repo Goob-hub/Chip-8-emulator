@@ -1,14 +1,14 @@
 #include <stdio.h>
 
 typedef struct {
-    unsigned short opcode; //Current op code that determines what the emulator runs in its execution phase (Shouldnt be in state, should be in fetch loop when emulator is fetching from memory of program)
     unsigned char memory[4096]; //Limit for memory that chip-8 programs can use, basically the memory of the program not the chip8, this just specifies the limit.
     unsigned char V[16]; //General cpu registers
     unsigned short I; //Memory address that points to data
     unsigned short pc; //Points at memory location to form opcode. (instruction)
     unsigned char gfx[64 * 32]; //Display graphics specs
-    unsigned char delay_timer; //Ticks 60 times per second, cpu speed runs at full but this is the main tracker of time
-    unsigned char sound_timer; //
+    __uint8_t delay_timer; //Ticks 60 times per second, cpu speed runs at full but this is the main tracker of time
+    __uint8_t sound_timer; //
+    __uint32_t cpu_hz;
     unsigned short stack[16]; //Stores return addresses, where the chip8 goes back to after a call. Be weary of overflow. ignore it or add safety checks
     unsigned short sp; //Index of the next free slot in the stack. increases on call and decreases on return
     unsigned short key[16]; //emulator input state, emulator must map to actual keyboard
