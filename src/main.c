@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include "chip8.h"
+#include "chip8.c"
 
 typedef struct {
     uint32_t window_width;
@@ -42,6 +43,7 @@ bool init_sdl(sdl_t *sdl, const config_t config) {
     return true;
 }
 
+// Figure out how to initialize memory with the chosen program.
 void init_chip8(chip8_t *chip8) {
     chip8->delay_timer = 60;
     chip8->sound_timer = 60;
@@ -62,14 +64,6 @@ void final_cleanup(const sdl_t sdl) {
     SDL_Quit();
 }
 
-void fetch() {
-
-}
-
-void decode() {
-
-}
-
 void render(const config_t config, const sdl_t sdl) {
     // This is how you draw shit in a nutshell    
     SDL_FRect r;
@@ -88,6 +82,102 @@ void render(const config_t config, const sdl_t sdl) {
     SDL_SetRenderTarget(sdl.renderer, NULL);
     SDL_RenderTexture(sdl.renderer, sdl.bitmapTexture, NULL, NULL);
     SDL_RenderPresent(sdl.renderer);
+}
+
+
+uint16_t fetch(chip8_t *chip8) {
+    // When shifting, the char gets promoted to an int(32bits) to ensure data isnt lost and that there is space neccessary to shift
+    // We then convert it back to a short(16bits) to keep data at its relative size
+    uint16_t opcode = chip8->memory[chip8->pc] << 8 | chip8->memory[chip8->pc + 1];
+
+    chip8->pc += 2;
+
+    return opcode;
+}
+
+void decode(chip8_t *chip8, uint16_t opcode) {
+    uint8_t nibble1 = opcode >> 12;
+    uint8_t x = (opcode >> 8) & 0x0F; // nibble2
+    uint8_t y = (opcode >> 4) & 0x0F; // nibble3
+    uint8_t n = opcode & 0x0F; // nibble4
+    uint8_t nn = opcode & 0xFF; // nibble3 && nibble4
+    uint16_t nnn = opcode & 0x0FFF;  // nibble2 && nibble3 && nibble4 
+
+    switch (nibble1)
+    {
+    case 0x00:
+        // Logic for opcodes that start with 0
+
+        if(opcode == 0x00E0) {
+            clear_screen(chip8);
+        } else if(opcode == 0x00EE) {
+            return_subroutine(chip8);
+        }
+        
+        // For different version of chip8
+        // if((opcode & 0xFFF0) == 0x00C0) { 
+        //    scroll_down(n)
+        // }   
+        
+        break;
+    case 0x01:
+        // For any opcode where the last 3 nibbles are fill in variables, these only have one default function call
+        //1nnn
+        jump(chip8, nnn);
+        break;
+    case 0x02:
+        //2nnn 
+        call_subroutine(chip8, nnn);
+        break;
+    case 0x03:
+         
+        break;
+    case 0x04:
+         
+        break;
+    case 0x05:
+         
+        break;
+    case 0x06:
+        //6xnn
+        set_register(chip8, x, nn);
+        break;
+    case 0x07:
+        //7xnn
+        add_to_register(chip8, x, nn);
+        break;
+    case 0x08:
+         
+        break;
+    case 0x09:
+         
+        break;
+    case 0x0A:
+        //Annn
+        set_index_register(chip8, nnn);
+        break;
+    case 0x0B:
+         
+        break;
+    case 0x0C:
+         
+        break;
+    case 0x0D:
+        //Dxyn
+        draw(chip8, x, y, n);
+        break;
+    case 0x0E:
+         
+        break;
+    case 0x0F:
+         
+        break;
+    
+    default:
+        printf("Unrecognized opcode detected.");
+        return;
+        break;
+    }
 }
 
 // This function should handle timing with the timers, call the chip8 cycle by decoding opcodes from memory, and call a render function that renders the current chip8's gfx state. 
@@ -122,8 +212,8 @@ int main(const int argc, const int **argv) {
         unsigned int currentTime = SDL_GetTicks();
 
         if(currentTime > lastTime + (1000 / chip8.cpu_hz)) {
-            fetch();
-            decode();
+            uint16_t opcode = fetch(&chip8);
+            decode(&chip8, opcode);
         }
     }
 

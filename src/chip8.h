@@ -1,17 +1,19 @@
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 typedef struct {
-    unsigned char memory[4096]; //Limit for memory that chip-8 programs can use, basically the memory of the program not the chip8, this just specifies the limit.
-    unsigned char V[16]; //General cpu registers
-    unsigned short I; //Memory address that points to data
-    unsigned short pc; //Points at memory location to form opcode. (instruction)
-    unsigned char gfx[64 * 32]; //Display graphics specs
-    __uint8_t delay_timer; //Ticks 60 times per second, cpu speed runs at full but this is the main tracker of time
-    __uint8_t sound_timer; //
-    __uint32_t cpu_hz;
-    unsigned short stack[16]; //Stores return addresses, where the chip8 goes back to after a call. Be weary of overflow. ignore it or add safety checks
-    unsigned short sp; //Index of the next free slot in the stack. increases on call and decreases on return
-    unsigned short key[16]; //emulator input state, emulator must map to actual keyboard
+    uint8_t memory[4096]; //Limit for memory that chip-8 programs can use, basically the memory of the program not the chip8, this just specifies the limit.
+    uint8_t V[16]; //General cpu registers
+    uint16_t I; //Memory address that points to data
+    uint16_t pc; //Points at memory location to form opcode. (instruction)
+    uint8_t gfx[64 * 32]; //Display graphics specs
+    uint8_t delay_timer; //Ticks 60 times per second, cpu speed runs at full but this is the main tracker of time
+    uint8_t sound_timer; //
+    uint8_t cpu_hz;
+    uint8_t stack[16]; //Stores return addresses, where the chip8 goes back to after a call. Be weary of overflow. ignore it or add safety checks
+    uint16_t sp; //Index of the next free slot in the stack. increases on call and decreases on return
+    uint16_t key[16]; //emulator input state, emulator must map to actual keyboard
 } chip8_t;
 
 // Chip 8 emulator simulates a cpu and interprets a fixed memory layout, it is not dynamic in this case. The memory is interpreted as instructions, the definition here just sets the limit that programs can be/use
