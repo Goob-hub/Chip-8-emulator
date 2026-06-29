@@ -2,11 +2,13 @@
 #include <time.h>
 #include "chip8.h"
 
-// TODO: Next step is to get the display graphics functionality. This comes in the form of the opcode DXYN We have a gfx[64 * 32] array on our chip8 struct. Each value represents whether the pixel is on or off
+// TODO: Next step is to get the display graphics functionality. This comes in the form of the opcode DXYN We have a gfx[64 * 32] (width * height) array on our chip8 struct. Each value represents whether the pixel is on or off
 
 //x = (index) % width 
 //y = (index) / width
-//index = (x * width) + y
+//index = (y * width) + x
+
+// For every new row with y, thats a new row of 64 x coordinates. Thats how the 2d grid is layed out in 1d memory
 
 // Should set all pixels in display array to 0 (off)
 void clear_screen(chip8_t *chip8) {
@@ -57,7 +59,36 @@ void set_index_register(chip8_t *chip8, uint16_t address) {
     chip8->I = address;
 }
 
-// Draw pixel at x/y coordinates that is 8xN pixels large
-void draw(chip8_t *chip8, uint8_t x, uint8_t y, uint8_t width) {
+void draw(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress, uint8_t spriteHeight) {
+    uint8_t x = chip8->V[xAddress];
+    uint8_t y = chip8->V[yAddress];
+    uint16_t gfxIndex = (y * 64) + x;
     
+    // Reset flag register
+    chip8->V[0xF] = 0;
+
+    // In this case, the spriteHeight variable represents how many bytes long the sprite is, not it's actual height.
+    for(uint8_t row = 0; row < spriteHeight; row++) {
+        uint8_t currentByte = chip8->memory[chip8->I + row];
+        uint8_t currentY = y + row;
+
+        // Read each bit of byte and render if in bounds
+        if(currentY < 32) {
+            for(uint8_t col = 0; col < 8; col++) {
+                uint8_t currentX = x + col;
+                // Should equal either 0x01 || 0x00 which tells me if the bit is on or off
+                uint8_t currentBit = currentByte >> (7 - col) & 0x01;
+                
+                // Only render if in bounds
+                if(currentX < 64) {
+                    // If collision between pixels, set flag register to 1
+                    if(chip8->gfx[(currentY * 64) + currentX] == 1 && currentBit == 0x01) {
+                        chip8->V[0xF] = 1;
+                    }
+
+                    chip8->gfx[(currentY * 64) + currentX] ^= currentBit;  
+                }
+            }
+        }
+    }
 }
