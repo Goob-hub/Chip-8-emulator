@@ -45,9 +45,10 @@ bool init_sdl(sdl_t *sdl, const config_t config) {
 
 // Figure out how to initialize memory with the chosen program.
 void init_chip8(chip8_t *chip8) {
-    chip8->delay_timer = 60;
-    chip8->sound_timer = 60;
+    chip8->delay_timer = 0;
+    chip8->sound_timer = 0;
     chip8->cpu_hz = 700;
+    chip8->pc = 0x200;
 }
 
 void setup_config(config_t *config) {
@@ -64,26 +65,36 @@ void final_cleanup(const sdl_t sdl) {
     SDL_Quit();
 }
 
-void render(const config_t config, const sdl_t sdl) {
-    // This is how you draw shit in a nutshell    
+void render(const config_t config, const sdl_t sdl, chip8_t *chip8) {
+    SDL_SetRenderDrawColor(sdl.renderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_RenderClear(sdl.renderer);
+    SDL_SetRenderDrawColor(sdl.renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+    for (uint16_t i = 0; i < sizeof(chip8->gfx) / sizeof(chip8->gfx[0]); i++)
+    {
+        uint8_t currentPixel = chip8->gfx[i];
+
+        if(currentPixel == 0x01) {
+            uint8_t x = (i) % 64;
+            uint8_t y = (i) / 64;
+
+            drawPixel(config, sdl, x, y);
+        }
+    }
+
+    SDL_RenderPresent(sdl.renderer);
+}
+
+void drawPixel(const config_t config, const sdl_t sdl, uint8_t x, uint8_t y) {    
     SDL_FRect r;
 
     r.h = 1 * config.window_scale;
     r.w = 1 * config.window_scale;
-    r.x = 10 * config.window_scale;
-    r.y = 10 * config.window_scale;
+    r.x = x * config.window_scale;
+    r.y = y * config.window_scale;
 
-    SDL_SetRenderTarget(sdl.renderer, sdl.bitmapTexture);
-    SDL_SetRenderDrawColor(sdl.renderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_RenderClear(sdl.renderer);
-    SDL_RenderRect(sdl.renderer,&r);
-    SDL_SetRenderDrawColor(sdl.renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderFillRect(sdl.renderer, &r);
-    SDL_SetRenderTarget(sdl.renderer, NULL);
-    SDL_RenderTexture(sdl.renderer, sdl.bitmapTexture, NULL, NULL);
-    SDL_RenderPresent(sdl.renderer);
 }
-
 
 uint16_t fetch(chip8_t *chip8) {
     // When shifting, the char gets promoted to an int(32bits) to ensure data isnt lost and that there is space neccessary to shift
@@ -95,7 +106,7 @@ uint16_t fetch(chip8_t *chip8) {
     return opcode;
 }
 
-void decode(chip8_t *chip8, uint16_t opcode) {
+void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opcode) {
     uint8_t nibble1 = opcode >> 12;
     uint8_t x = (opcode >> 8) & 0x0F; // nibble2
     uint8_t y = (opcode >> 4) & 0x0F; // nibble3
@@ -147,7 +158,25 @@ void decode(chip8_t *chip8, uint16_t opcode) {
         add_to_register(chip8, x, nn);
         break;
     case 0x08:
-         
+         if(n == 0x00) {
+            copy_register(chip8, x, y);
+         } else if(n == 0x01) {
+            or_register(chip8, x, y);
+         } else if(n == 0x02) {
+            and_register(chip8, x, y);
+         } else if(n == 0x03) {
+            xor_register(chip8, x, y);
+         } else if(n == 0x04) {
+            add_register(chip8, x, y);
+         } else if(n == 0x05) {
+            subtract_register(chip8, x, y);
+         } else if(n == 0x06) {
+            set_right_shift_register(chip8, x, y);
+         } else if(n == 0x07) {
+            reverse_subtract_register(chip8, x, y);
+         } else if(n == 0x0E) {
+            set_left_shift_register(chip8, x, y);
+         }
         break;
     case 0x09:
          
@@ -165,6 +194,7 @@ void decode(chip8_t *chip8, uint16_t opcode) {
     case 0x0D:
         //Dxyn
         draw(chip8, x, y, n);
+        render(config, sdl, chip8);
         break;
     case 0x0E:
          
@@ -211,9 +241,14 @@ int main(const int argc, const int **argv) {
 
         unsigned int currentTime = SDL_GetTicks();
 
+        if(currentTime > lastTime + (1000 / 60)) {
+            chip8.delay_timer--;
+            chip8.sound_timer--;
+        }
+
         if(currentTime > lastTime + (1000 / chip8.cpu_hz)) {
             uint16_t opcode = fetch(&chip8);
-            decode(&chip8, opcode);
+            decode(config, sdl, &chip8, opcode);
         }
     }
 

@@ -24,6 +24,75 @@ void jump(chip8_t *chip8, uint16_t address) {
     chip8->pc = address;
 }
 
+void copy_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[xAddress] = chip8->V[yAddress];
+}
+
+void or_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[xAddress] |= chip8->V[yAddress];
+}
+
+void and_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[xAddress] &= chip8->V[yAddress];
+}
+
+void xor_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[xAddress] ^= chip8->V[yAddress];
+}
+
+void add_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    uint16_t result = chip8->V[xAddress] + chip8->V[yAddress];
+
+    if(result > 255) {
+        chip8->V[0xF] = 1;
+    } else {
+        chip8->V[0xF] = 0;
+    }
+
+    chip8->V[xAddress] += chip8->V[yAddress];
+}
+
+void subtract_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    if(chip8->V[xAddress] >= chip8->V[yAddress]) {
+        chip8->V[0xF] = 1;
+    } else {
+        chip8->V[0xF] = 0;
+    }
+
+    chip8->V[xAddress] -= chip8->V[yAddress];
+}
+
+void reverse_subtract_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    if(chip8->V[yAddress] >= chip8->V[xAddress]) {
+        chip8->V[0xF] = 1;
+    } else {
+        chip8->V[0xF] = 0;
+    }
+
+    chip8->V[xAddress] = chip8->V[yAddress] - chip8->V[xAddress];
+}
+
+// Some ROM's that were made for newer chip8 versions expect this to have different functionality. just be weary of that
+void set_left_shift_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[xAddress] = chip8->V[yAddress];
+
+    uint8_t bitShiftedOut = chip8->V[xAddress] >> 7 & 0x01;
+
+    chip8->V[xAddress] <<= 1;
+
+    chip8->V[0xF] = bitShiftedOut;
+}
+
+void set_right_shift_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[xAddress] = chip8->V[yAddress];
+
+    uint8_t bitShiftedOut = chip8->V[xAddress] & 0x01;
+
+    chip8->V[xAddress] >>= 1;
+
+    chip8->V[0xF] = bitShiftedOut;
+}
+
 // Here you push the current pc to the stack as it is the return address and then you set the pc to the new address
 void call_subroutine(chip8_t *chip8, uint16_t address) {
     if(chip8->sp >= sizeof(chip8->stack) / sizeof(chip8->stack[0])) {
@@ -67,7 +136,7 @@ void draw(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress, uint8_t spriteHeig
     // Reset flag register
     chip8->V[0xF] = 0;
 
-    // In this case, the spriteHeight variable represents how many bytes long the sprite is, not it's actual height.
+    // In this case, the spriteHeight variable represents how many bytes long the sprite is and it's actual height.
     for(uint8_t row = 0; row < spriteHeight; row++) {
         uint8_t currentByte = chip8->memory[chip8->I + row];
         uint8_t currentY = y + row;
