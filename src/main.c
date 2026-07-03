@@ -133,21 +133,19 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
         break;
     case 0x01:
         // For any opcode where the last 3 nibbles are fill in variables, these only have one default function call
-        //1nnn
         jump(chip8, nnn);
         break;
     case 0x02:
-        //2nnn 
         call_subroutine(chip8, nnn);
         break;
     case 0x03:
-         
+        skip_if_equal(chip8, x, nn);
         break;
     case 0x04:
-         
+        skip_if_not_equal(chip8, x, nn);
         break;
     case 0x05:
-         
+         skip_if_registers_equal(chip8, x, y);
         break;
     case 0x06:
         //6xnn
@@ -179,25 +177,23 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
          }
         break;
     case 0x09:
-         
+        skip_if_registers_not_equal(chip8, x, y);
         break;
     case 0x0A:
-        //Annn
         set_index_register(chip8, nnn);
         break;
     case 0x0B:
-         
+        jump_with_offset(chip8, nnn);
         break;
     case 0x0C:
-         
+        set_random_masked_value(chip8, x, nn);
         break;
     case 0x0D:
-        //Dxyn
         draw(chip8, x, y, n);
         render(config, sdl, chip8);
         break;
     case 0x0E:
-         
+        //  For opcodes that require tracking keystrokes, use sdl functions that track that stuff. Also initialize the keys in the chip8 init function
         break;
     case 0x0F:
          
@@ -229,6 +225,8 @@ int main(const int argc, const int **argv) {
     }
 
     init_chip8(&chip8);
+
+    srand(time(NULL));
 
     while (!done) {
         SDL_Event event;

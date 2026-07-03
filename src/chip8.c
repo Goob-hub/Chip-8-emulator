@@ -24,6 +24,38 @@ void jump(chip8_t *chip8, uint16_t address) {
     chip8->pc = address;
 }
 
+void skip_if_equal(chip8_t *chip8, uint8_t xAddress, uint8_t value) {
+    if(chip8->V[xAddress] == value) {
+        chip8->pc += 2;
+    }
+}
+
+void skip_if_not_equal(chip8_t *chip8, uint8_t xAddress, uint8_t value) {
+    if(chip8->V[xAddress] != value) {
+        chip8->pc += 2;
+    }
+}
+
+void skip_if_registers_equal(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    if(chip8->V[xAddress] == chip8->V[yAddress]) {
+        chip8->pc += 2;
+    }
+}
+
+void skip_if_registers_not_equal(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    if(chip8->V[xAddress] != chip8->V[yAddress]) {
+        chip8->pc += 2;
+    }
+}
+
+void jump_with_offset(chip8_t *chip8, uint16_t address) {
+    chip8->pc = address + chip8->V[0];
+}
+
+void set_random_masked_value(chip8_t *chip8, uint8_t xAddress, uint8_t value) {
+    chip8->V[xAddress] = value & (uint8_t)rand();
+}
+
 void copy_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
     chip8->V[xAddress] = chip8->V[yAddress];
 }
