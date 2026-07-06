@@ -14,7 +14,7 @@ typedef struct {
     uint8_t cpu_hz;
     uint8_t stack[16]; //Stores return addresses, where the chip8 goes back to after a call. Be weary of overflow. ignore it or add safety checks
     uint16_t sp; //Index of the next free slot in the stack. increases on call and decreases on return
-    uint16_t key[16]; //emulator input state, emulator must map to actual keyboard
+    uint8_t key[16]; //emulator input state, emulator must map to actual keyboard
 } chip8_t;
 
 // Chip 8 emulator simulates a cpu and interprets a fixed memory layout, it is not dynamic in this case. The memory is interpreted as instructions, the definition here just sets the limit that programs can be/use

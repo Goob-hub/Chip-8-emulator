@@ -48,6 +48,49 @@ void skip_if_registers_not_equal(chip8_t *chip8, uint8_t xAddress, uint8_t yAddr
     }
 }
 
+void skip_if_key_pressed(chip8_t *chip8, uint8_t xAddress) {
+    // VX in this case contains bits which can be read as hexadecimal or decimal, so using them as array indexes will work.
+    if(chip8->key[chip8->V[xAddress]] == 1) {
+        chip8->pc += 2;
+    }   
+}
+
+void skip_if_key_not_pressed(chip8_t *chip8, uint8_t xAddress) {
+    if(chip8->key[chip8->V[xAddress]] != 1) {
+        chip8->pc += 2;
+    }   
+}
+
+void add_index_register(chip8_t *chip8, uint8_t xAddress) {
+    chip8->I += chip8->V[xAddress];
+}
+
+void await_keypress(chip8_t *chip8, uint8_t xAddress) {
+    bool isKeyPressed = false;
+    uint8_t keyIndex = 0;
+    //The index of the key represents the actual key pressed, for example index 12 == 0xB in hexadecimal which corresponds to the actual key on the chip8
+    for (uint8_t i = 0; i < sizeof(chip8->key) / sizeof(chip8->key[0]); i++)
+    {
+        if(chip8->key[i] == 1) {
+            isKeyPressed = true;
+            keyIndex = i;
+            break;
+        }
+    }
+
+    if(isKeyPressed) {
+        chip8->V[xAddress] = keyIndex;
+    } else {
+        chip8->pc -= 2;
+    }
+    
+}
+
+void set_font_character_address(chip8_t *chip8, uint8_t xAddress) {
+    // Since my font is allocated at the first 80 memory addresses and is 5 this will set I to the starting point of the font sprite in memory.
+    chip8->I = chip8->V[xAddress] * 5;
+}
+
 void jump_with_offset(chip8_t *chip8, uint16_t address) {
     chip8->pc = address + chip8->V[0];
 }
@@ -168,7 +211,7 @@ void draw(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress, uint8_t spriteHeig
     // Reset flag register
     chip8->V[0xF] = 0;
 
-    // In this case, the spriteHeight variable represents how many bytes long the sprite is and it's actual height.
+    // In this case, the spriteHeight variable represents how many bytes long the sprite is which corresponds to it's actual height.
     for(uint8_t row = 0; row < spriteHeight; row++) {
         uint8_t currentByte = chip8->memory[chip8->I + row];
         uint8_t currentY = y + row;

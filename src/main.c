@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include "chip8.h"
+#include "chip8_fontset.c"
 #include "chip8.c"
 
 typedef struct {
@@ -49,6 +50,15 @@ void init_chip8(chip8_t *chip8) {
     chip8->sound_timer = 0;
     chip8->cpu_hz = 700;
     chip8->pc = 0x200;
+
+    int fontAddress = 0x00;
+
+    for (uint8_t i = 0; i < sizeof(chip8_fontset) / sizeof(chip8_fontset[0]); i++)
+    {
+        int currentAddress = fontAddress + i;
+
+        chip8->memory[currentAddress] = chip8_fontset[i];
+    }
 }
 
 void setup_config(config_t *config) {
@@ -145,7 +155,9 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
         skip_if_not_equal(chip8, x, nn);
         break;
     case 0x05:
-         skip_if_registers_equal(chip8, x, y);
+        if(n == 0x0) {
+            skip_if_registers_equal(chip8, x, y);
+        }
         break;
     case 0x06:
         //6xnn
@@ -177,7 +189,9 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
          }
         break;
     case 0x09:
-        skip_if_registers_not_equal(chip8, x, y);
+        if(n == 0x00) {
+            skip_if_registers_not_equal(chip8, x, y);
+        }
         break;
     case 0x0A:
         set_index_register(chip8, nnn);
@@ -193,10 +207,22 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
         render(config, sdl, chip8);
         break;
     case 0x0E:
-        //  For opcodes that require tracking keystrokes, use sdl functions that track that stuff. Also initialize the keys in the chip8 init function
+        if(nn == 0x9E) {
+            skip_if_key_pressed(chip8, x);
+        } else if(nn == 0xA1) {
+            skip_if_key_not_pressed(chip8, x);
+        }
         break;
     case 0x0F:
-         
+        if(nn == 0x1E) {
+            add_index_register(chip8, x);
+        } else if(nn == 0x0A) {
+            await_keypress(chip8, x);
+        } else if(nn == 0x29) {
+            set_font_character_address(chip8, x);
+        } else if(nn == 0x33) {
+
+        }
         break;
     
     default:
