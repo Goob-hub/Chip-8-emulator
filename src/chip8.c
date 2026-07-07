@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <time.h>
 #include "chip8.h"
 
@@ -113,6 +114,45 @@ void and_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
 
 void xor_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
     chip8->V[xAddress] ^= chip8->V[yAddress];
+}
+
+void binary_decimal_conversion(chip8_t *chip8, uint8_t xAddress) {
+    uint8_t value = chip8->V[xAddress];
+    uint8_t indexAddress = chip8->I;
+
+    // 156. 1 gets put in I memory address. 5 gets put in I + 1 memory address. 6 gets put in I + 2 memory address.
+
+    chip8->memory[indexAddress] = value / 100;;
+
+    chip8->memory[indexAddress + 1] = (value / 10) % 10;
+
+    chip8->memory[indexAddress + 2] = value % 10; 
+}
+
+void store_delay_timer(chip8_t *chip8, uint8_t xAddress) {
+    chip8->V[xAddress] = chip8->delay_timer;
+}
+
+void set_delay_timer(chip8_t *chip8, uint8_t xAddress) {
+    chip8->delay_timer = chip8->V[xAddress];
+}
+
+void set_sound_timer(chip8_t *chip8, uint8_t xAddress) {
+    chip8->sound_timer = chip8->V[xAddress];
+}
+
+void store_registers_to_memory(chip8_t *chip8, uint8_t xAddress) {
+    for (uint8_t i = 0; i < xAddress + 1; i++)
+    {
+        chip8->memory[chip8->I + i] = chip8->V[i];
+    }
+}
+
+void load_registers_from_memory(chip8_t *chip8, uint8_t xAddress) {
+    for (uint8_t i = 0; i < xAddress + 1; i++)
+    {
+        chip8->V[i] = chip8->memory[chip8->I + i];
+    }
 }
 
 void add_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {

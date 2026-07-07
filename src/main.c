@@ -45,7 +45,7 @@ bool init_sdl(sdl_t *sdl, const config_t config) {
 }
 
 // Figure out how to initialize memory with the chosen program.
-void init_chip8(chip8_t *chip8) {
+void init_chip8(chip8_t *chip8, const int argc, const char **argv) {
     chip8->delay_timer = 0;
     chip8->sound_timer = 0;
     chip8->cpu_hz = 700;
@@ -59,6 +59,29 @@ void init_chip8(chip8_t *chip8) {
 
         chip8->memory[currentAddress] = chip8_fontset[i];
     }
+
+    if(argv[1]) {
+        load_rom(&chip8, argv[1]);
+    }
+}
+
+void load_rom(chip8_t *chip8, const char *filepath) {
+    // Open ROM in binary mode.
+
+    // If the file couldn't be opened:
+    //     return false.
+
+    // Determine the ROM size.
+
+    // If the ROM is larger than available CHIP-8 memory:
+    //     close the file.
+    //     return false.
+
+    // Read the ROM directly into chip8->memory beginning at address 0x200.
+
+    // Close the file.
+
+    // Return true.
 }
 
 void setup_config(config_t *config) {
@@ -127,22 +150,13 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
     switch (nibble1)
     {
     case 0x00:
-        // Logic for opcodes that start with 0
-
-        if(opcode == 0x00E0) {
+        if(nn == 0xE0) {
             clear_screen(chip8);
-        } else if(opcode == 0x00EE) {
+        } else if(nn == 0xEE) {
             return_subroutine(chip8);
-        }
-        
-        // For different version of chip8
-        // if((opcode & 0xFFF0) == 0x00C0) { 
-        //    scroll_down(n)
-        // }   
-        
+        } 
         break;
     case 0x01:
-        // For any opcode where the last 3 nibbles are fill in variables, these only have one default function call
         jump(chip8, nnn);
         break;
     case 0x02:
@@ -160,11 +174,9 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
         }
         break;
     case 0x06:
-        //6xnn
         set_register(chip8, x, nn);
         break;
     case 0x07:
-        //7xnn
         add_to_register(chip8, x, nn);
         break;
     case 0x08:
@@ -221,7 +233,17 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
         } else if(nn == 0x29) {
             set_font_character_address(chip8, x);
         } else if(nn == 0x33) {
-
+            binary_decimal_conversion(chip8, x);
+        } else if(nn == 0x07) {
+            store_delay_timer(chip8, x);
+        } else if(nn == 0x15) {
+            set_delay_timer(chip8, x);
+        } else if(nn == 0x18) {
+            set_sound_timer(chip8, x);
+        } else if(nn == 0x55) {
+            store_registers_to_memory(chip8, x);
+        } else if(nn == 0x65) {
+            load_registers_from_memory(chip8, x);
         }
         break;
     
@@ -233,14 +255,12 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
 }
 
 // This function should handle timing with the timers, call the chip8 cycle by decoding opcodes from memory, and call a render function that renders the current chip8's gfx state. 
-int main(const int argc, const int **argv) {
-    (void)argc;
-    (void)argv;
-    
+int main(const int argc, const char **argv) {
     sdl_t sdl = {0};
     config_t config = {0};
     chip8_t chip8 = {0};
-    unsigned int lastTime = 0;
+    uint64_t lastCpuTick = 0;
+    uint64_t lastTimerTick = 0;
     bool done = false;
 
     setup_config(&config);
@@ -250,7 +270,7 @@ int main(const int argc, const int **argv) {
         exit(1);
     }
 
-    init_chip8(&chip8);
+    init_chip8(&chip8, argc, argv);
 
     srand(time(NULL));
 
@@ -263,16 +283,21 @@ int main(const int argc, const int **argv) {
             }
         }
 
-        unsigned int currentTime = SDL_GetTicks();
+        uint64_t currentTime = SDL_GetTicks();
 
-        if(currentTime > lastTime + (1000 / 60)) {
-            chip8.delay_timer--;
-            chip8.sound_timer--;
+        if(currentTime - lastTimerTick >= (1000 / 60)) {
+            if(chip8.delay_timer > 0) chip8.delay_timer--;
+
+            if(chip8.sound_timer > 0) chip8.sound_timer--;
+
+            lastTimerTick = currentTime;
         }
 
-        if(currentTime > lastTime + (1000 / chip8.cpu_hz)) {
+        if(currentTime - lastCpuTick >= (1000 / chip8.cpu_hz)) {
             uint16_t opcode = fetch(&chip8);
             decode(config, sdl, &chip8, opcode);
+
+            lastCpuTick = currentTime;
         }
     }
 
