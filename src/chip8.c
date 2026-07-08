@@ -13,7 +13,7 @@
 
 // Should set all pixels in display array to 0 (off)
 void clear_screen(chip8_t *chip8) {
-    for(int i = 0; i < sizeof(chip8->gfx) / sizeof(chip8->gfx[0]); i++) {
+    for(unsigned long i = 0; i < sizeof(chip8->gfx) / sizeof(chip8->gfx[0]); i++) {
         chip8->gfx[i] = 0;
     }
 
@@ -22,7 +22,9 @@ void clear_screen(chip8_t *chip8) {
 
 // Should set PC counter to specified memory address (jumping to a point in memory to execute something) pc does not increment in this function
 void jump(chip8_t *chip8, uint16_t address) {
+    // printf("Address: %d \n", address);
     chip8->pc = address;
+    // printf("PC: %d \n", chip8->pc); 
 }
 
 void skip_if_equal(chip8_t *chip8, uint8_t xAddress, uint8_t value) {
@@ -118,15 +120,23 @@ void xor_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
 
 void binary_decimal_conversion(chip8_t *chip8, uint8_t xAddress) {
     uint8_t value = chip8->V[xAddress];
-    uint8_t indexAddress = chip8->I;
+    uint16_t indexAddress = chip8->I;
 
     // 156. 1 gets put in I memory address. 5 gets put in I + 1 memory address. 6 gets put in I + 2 memory address.
-
-    chip8->memory[indexAddress] = value / 100;;
-
+    
+    chip8->memory[indexAddress] = value / 100;
+    
     chip8->memory[indexAddress + 1] = (value / 10) % 10;
-
+    
     chip8->memory[indexAddress + 2] = value % 10; 
+    
+    // DEBUGGING:
+    // printf("Value: %d Digit1: %d Digit2: %d, Digit3: %d \n", value, value / 100, (value / 10) % 10, value % 10);
+    // printf("Addresses: %d %d %d \n", indexAddress, indexAddress + 1, indexAddress + 2);
+    // printf("%d %d %d\n",
+    //    chip8->memory[chip8->I],
+    //    chip8->memory[chip8->I + 1],
+    //    chip8->memory[chip8->I + 2]);
 }
 
 void store_delay_timer(chip8_t *chip8, uint8_t xAddress) {
@@ -246,7 +256,6 @@ void set_index_register(chip8_t *chip8, uint16_t address) {
 void draw(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress, uint8_t spriteHeight) {
     uint8_t x = chip8->V[xAddress];
     uint8_t y = chip8->V[yAddress];
-    uint16_t gfxIndex = (y * 64) + x;
     
     // Reset flag register
     chip8->V[0xF] = 0;

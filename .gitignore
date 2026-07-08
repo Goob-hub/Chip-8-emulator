@@ -54,5 +54,6 @@ dkms.conf
 build
 
 SDL3/
+Roms/
 
 .dwo

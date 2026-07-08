@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <time.h>
 #include <SDL3/SDL.h>
 #include "chip8.h"
-#include "chip8_fontset.c"
-#include "chip8.c"
+#include "chip8_fontset.h"
+
+// TODO: Keyboard input not working yet, finish implementing that john
 
 typedef struct {
     uint32_t window_width;
@@ -19,7 +21,7 @@ typedef struct {
     SDL_Texture *bitmapTexture;
 } sdl_t;
 
-bool init_sdl(sdl_t *sdl, const config_t config) {
+static bool init_sdl(sdl_t *sdl, const config_t config) {
     if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)){
         printf("Error: SDL initialization failed");
         return false;
@@ -44,8 +46,36 @@ bool init_sdl(sdl_t *sdl, const config_t config) {
     return true;
 }
 
+static bool load_rom(chip8_t *chip8, const char *filepath) {
+    FILE* filePointer = fopen(filepath, "rb"); 
+
+    if(filePointer == NULL) {
+        perror("Unable to load rom, file does not exist.");
+        fclose(filePointer);
+        return false;
+    }
+
+    fseek(filePointer, 0, SEEK_END); // seek to end of file
+    unsigned long size = ftell(filePointer); // get current file pointer
+
+    if(size > sizeof(chip8->memory) - 512) {
+        perror("Unable to load rom, file is too large.");
+        fclose(filePointer);
+        return false;
+    }
+
+    fseek(filePointer, 0, SEEK_SET); // seek back to beginning of file
+    // proceed with allocating memory and reading the file
+
+    fread(&chip8->memory[0x200], sizeof(uint8_t), size, filePointer);
+
+    fclose(filePointer);
+
+    return true;
+}
+
 // Figure out how to initialize memory with the chosen program.
-void init_chip8(chip8_t *chip8, const int argc, const char **argv) {
+static bool init_chip8(chip8_t *chip8, const char **argv) {
     chip8->delay_timer = 0;
     chip8->sound_timer = 0;
     chip8->cpu_hz = 700;
@@ -53,7 +83,7 @@ void init_chip8(chip8_t *chip8, const int argc, const char **argv) {
 
     int fontAddress = 0x00;
 
-    for (uint8_t i = 0; i < sizeof(chip8_fontset) / sizeof(chip8_fontset[0]); i++)
+    for (unsigned long i = 0; i < sizeof(chip8_fontset) / sizeof(chip8_fontset[0]); i++)
     {
         int currentAddress = fontAddress + i;
 
@@ -61,30 +91,27 @@ void init_chip8(chip8_t *chip8, const int argc, const char **argv) {
     }
 
     if(argv[1]) {
-        load_rom(&chip8, argv[1]);
+        if(!load_rom(chip8, argv[1])) {
+            return false;
+        }
     }
+
+    return true;
 }
 
-void load_rom(chip8_t *chip8, const char *filepath) {
-    // Open ROM in binary mode.
+static void drawPixel(const config_t config, const sdl_t sdl, uint8_t x, uint8_t y) {    
+    SDL_FRect r;
 
-    // If the file couldn't be opened:
-    //     return false.
+    r.h = 1 * config.window_scale;
+    r.w = 1 * config.window_scale;
+    r.x = x * config.window_scale;
+    r.y = y * config.window_scale;
 
-    // Determine the ROM size.
-
-    // If the ROM is larger than available CHIP-8 memory:
-    //     close the file.
-    //     return false.
-
-    // Read the ROM directly into chip8->memory beginning at address 0x200.
-
-    // Close the file.
-
-    // Return true.
+    SDL_RenderFillRect(sdl.renderer, &r);
 }
 
-void setup_config(config_t *config) {
+
+static void setup_config(config_t *config) {
     *config = (config_t) {
         .window_width = 64,
         .window_height = 32,
@@ -92,13 +119,13 @@ void setup_config(config_t *config) {
     };
 }
 
-void final_cleanup(const sdl_t sdl) {
+static void final_cleanup(const sdl_t sdl) {
     SDL_DestroyWindow(sdl.window);
     SDL_DestroyRenderer(sdl.renderer);
     SDL_Quit();
 }
 
-void render(const config_t config, const sdl_t sdl, chip8_t *chip8) {
+static void render(const config_t config, const sdl_t sdl, chip8_t *chip8) {
     SDL_SetRenderDrawColor(sdl.renderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(sdl.renderer);
     SDL_SetRenderDrawColor(sdl.renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -118,18 +145,7 @@ void render(const config_t config, const sdl_t sdl, chip8_t *chip8) {
     SDL_RenderPresent(sdl.renderer);
 }
 
-void drawPixel(const config_t config, const sdl_t sdl, uint8_t x, uint8_t y) {    
-    SDL_FRect r;
-
-    r.h = 1 * config.window_scale;
-    r.w = 1 * config.window_scale;
-    r.x = x * config.window_scale;
-    r.y = y * config.window_scale;
-
-    SDL_RenderFillRect(sdl.renderer, &r);
-}
-
-uint16_t fetch(chip8_t *chip8) {
+static uint16_t fetch(chip8_t *chip8) {
     // When shifting, the char gets promoted to an int(32bits) to ensure data isnt lost and that there is space neccessary to shift
     // We then convert it back to a short(16bits) to keep data at its relative size
     uint16_t opcode = chip8->memory[chip8->pc] << 8 | chip8->memory[chip8->pc + 1];
@@ -139,7 +155,7 @@ uint16_t fetch(chip8_t *chip8) {
     return opcode;
 }
 
-void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opcode) {
+static void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opcode) {
     uint8_t nibble1 = opcode >> 12;
     uint8_t x = (opcode >> 8) & 0x0F; // nibble2
     uint8_t y = (opcode >> 4) & 0x0F; // nibble3
@@ -252,6 +268,12 @@ void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opc
         return;
         break;
     }
+
+    // DEBUGGING
+    // printf("PC: 0x%03X (%3d)  Opcode: 0x%04X\n",
+    //    chip8->pc,
+    //    chip8->pc,
+    //    opcode);
 }
 
 // This function should handle timing with the timers, call the chip8 cycle by decoding opcodes from memory, and call a render function that renders the current chip8's gfx state. 
@@ -263,6 +285,11 @@ int main(const int argc, const char **argv) {
     uint64_t lastTimerTick = 0;
     bool done = false;
 
+    if (argc < 2) {
+        printf("Usage: %s <rom>\n", argv[0]);
+        return 1;
+    }
+
     setup_config(&config);
 
     if(!init_sdl(&sdl, config)) {
@@ -270,7 +297,10 @@ int main(const int argc, const char **argv) {
         exit(1);
     }
 
-    init_chip8(&chip8, argc, argv);
+    if(!init_chip8(&chip8, argv)) {
+        SDL_Quit();
+        exit(1);
+    }
 
     srand(time(NULL));
 
