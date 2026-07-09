@@ -21,6 +21,25 @@ typedef struct {
     SDL_Texture *bitmapTexture;
 } sdl_t;
 
+const SDL_Scancode keymap[16] = {
+    SDL_SCANCODE_X, // 0
+    SDL_SCANCODE_1, // 1
+    SDL_SCANCODE_2, // 2
+    SDL_SCANCODE_3, // 3
+    SDL_SCANCODE_Q, // 4
+    SDL_SCANCODE_W, // 5
+    SDL_SCANCODE_E, // 6
+    SDL_SCANCODE_A, // 7
+    SDL_SCANCODE_S, // 8
+    SDL_SCANCODE_D, // 9
+    SDL_SCANCODE_Z, // A
+    SDL_SCANCODE_C, // B
+    SDL_SCANCODE_4, // C
+    SDL_SCANCODE_R, // D
+    SDL_SCANCODE_F, // E
+    SDL_SCANCODE_V  // F
+};
+
 static bool init_sdl(sdl_t *sdl, const config_t config) {
     if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)){
         printf("Error: SDL initialization failed");
@@ -74,7 +93,37 @@ static bool load_rom(chip8_t *chip8, const char *filepath) {
     return true;
 }
 
-// Figure out how to initialize memory with the chosen program.
+static void updateKeyState(chip8_t *chip8, SDL_Event *event) {
+
+    SDL_Scancode scancode = event->key.scancode;
+    int8_t keyIndex = -1;
+
+    for (unsigned long i = 0; i < sizeof(keymap) / sizeof(keymap[0]); i++)
+    {
+        if(keymap[i] == scancode) {
+            keyIndex = i;
+            break;
+        }
+    }
+
+    if(keyIndex == -1) {
+        printf("Unrecognized key pressed.\n");
+        return;
+    }
+
+    switch (event->type)
+    {
+        case SDL_EVENT_KEY_DOWN:
+            chip8->key[keyIndex] = 1;
+            break;
+        case SDL_EVENT_KEY_UP:
+            chip8->key[keyIndex] = 0;
+            break;
+        default:
+            break;
+    }
+}
+
 static bool init_chip8(chip8_t *chip8, const char **argv) {
     chip8->delay_timer = 0;
     chip8->sound_timer = 0;
@@ -270,13 +319,12 @@ static void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint1
     }
 
     // DEBUGGING
-    // printf("PC: 0x%03X (%3d)  Opcode: 0x%04X\n",
-    //    chip8->pc,
-    //    chip8->pc,
-    //    opcode);
+    printf("PC: 0x%03X (%3d)  Opcode: 0x%04X\n",
+       chip8->pc,
+       chip8->pc,
+       opcode);
 }
 
-// This function should handle timing with the timers, call the chip8 cycle by decoding opcodes from memory, and call a render function that renders the current chip8's gfx state. 
 int main(const int argc, const char **argv) {
     sdl_t sdl = {0};
     config_t config = {0};
@@ -311,7 +359,11 @@ int main(const int argc, const char **argv) {
             if (event.type == SDL_EVENT_QUIT) {
                 done = true;
             }
-        }
+
+            if(event.type == SDL_EVENT_KEY_UP || event.type == SDL_EVENT_KEY_DOWN) {
+                updateKeyState(&chip8, &event);
+            }
+        }  
 
         uint64_t currentTime = SDL_GetTicks();
 
