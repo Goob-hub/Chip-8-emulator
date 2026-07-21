@@ -115,6 +115,7 @@ void and_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
 }
 
 void xor_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    // printf("XOR Before: %d, After: %d", chip8->V[xAddress], chip8->V[xAddress] ^ chip8->V[yAddress]);
     chip8->V[xAddress] ^= chip8->V[yAddress];
 }
 
@@ -199,9 +200,13 @@ void reverse_subtract_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddres
 
 // Some ROM's that were made for newer chip8 versions expect this to have different functionality. just be weary of that
 void set_left_shift_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
-    chip8->V[xAddress] = chip8->V[yAddress];
+    
+    // Add compatibility flag for this older implementation. Do the same for right shift.
+    // chip8->V[xAddress] = chip8->V[yAddress];
 
-    uint8_t bitShiftedOut = chip8->V[xAddress] >> 7 & 0x01;
+    printf("%d \n", yAddress);
+
+    uint8_t bitShiftedOut = (chip8->V[xAddress] >> 7) & 0x01;
 
     chip8->V[xAddress] <<= 1;
 
@@ -209,7 +214,9 @@ void set_left_shift_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress)
 }
 
 void set_right_shift_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
-    chip8->V[xAddress] = chip8->V[yAddress];
+    // chip8->V[xAddress] = chip8->V[yAddress];
+
+    printf("%d \n", yAddress);
 
     uint8_t bitShiftedOut = chip8->V[xAddress] & 0x01;
 
@@ -269,17 +276,18 @@ void draw(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress, uint8_t spriteHeig
         if(currentY < 32) {
             for(uint8_t col = 0; col < 8; col++) {
                 uint8_t currentX = x + col;
+                uint16_t index = (currentY * 64) + currentX;
                 // Should equal either 0x01 || 0x00 which tells me if the bit is on or off
                 uint8_t currentBit = currentByte >> (7 - col) & 0x01;
                 
                 // Only render if in bounds
                 if(currentX < 64) {
                     // If collision between pixels, set flag register to 1
-                    if(chip8->gfx[(currentY * 64) + currentX] == 1 && currentBit == 0x01) {
+                    if(chip8->gfx[index] && currentBit == 0x01) {
                         chip8->V[0xF] = 1;
                     }
 
-                    chip8->gfx[(currentY * 64) + currentX] ^= currentBit;  
+                    chip8->gfx[index] ^= currentBit;  
                 }
             }
         }
