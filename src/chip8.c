@@ -168,34 +168,38 @@ void load_registers_from_memory(chip8_t *chip8, uint8_t xAddress) {
 
 void add_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
     uint16_t result = chip8->V[xAddress] + chip8->V[yAddress];
-
+    
+    chip8->V[xAddress] += chip8->V[yAddress];
+    
     if(result > 255) {
         chip8->V[0xF] = 1;
     } else {
         chip8->V[0xF] = 0;
     }
-
-    chip8->V[xAddress] += chip8->V[yAddress];
 }
 
 void subtract_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
-    if(chip8->V[xAddress] >= chip8->V[yAddress]) {
+    uint8_t oldXValue = chip8->V[xAddress];
+
+    chip8->V[xAddress] -= chip8->V[yAddress];
+
+    if(oldXValue >= chip8->V[yAddress]) {
         chip8->V[0xF] = 1;
     } else {
         chip8->V[0xF] = 0;
     }
-
-    chip8->V[xAddress] -= chip8->V[yAddress];
 }
 
 void reverse_subtract_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
-    if(chip8->V[yAddress] >= chip8->V[xAddress]) {
+    uint8_t oldYValue = chip8->V[yAddress];
+
+    chip8->V[xAddress] = chip8->V[yAddress] - chip8->V[xAddress];
+
+    if(oldYValue >= chip8->V[xAddress]) {
         chip8->V[0xF] = 1;
     } else {
         chip8->V[0xF] = 0;
     }
-
-    chip8->V[xAddress] = chip8->V[yAddress] - chip8->V[xAddress];
 }
 
 // Some ROM's that were made for newer chip8 versions expect this to have different functionality. just be weary of that

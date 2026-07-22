@@ -317,10 +317,10 @@ static void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint1
     }
 
     //TODO: Add debugging flag. use argv[2]
-    // printf("PC: 0x%03X (%3d)  Opcode: 0x%04X\n",
-    //    chip8->pc,
-    //    chip8->pc,
-    //    opcode);
+    printf("PC: 0x%03X (%3d)  Opcode: 0x%04X\n",
+       chip8->pc,
+       chip8->pc,
+       opcode);
 }
 
 int main(const int argc, const char **argv) {
