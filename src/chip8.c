@@ -106,15 +106,19 @@ void copy_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
     chip8->V[xAddress] = chip8->V[yAddress];
 }
 
+// TODO: Add option to toggle setting vf flag to 0. It is a quirk for COSMIC chip8
 void or_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[0xF] = 0;
     chip8->V[xAddress] |= chip8->V[yAddress];
 }
 
 void and_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[0xF] = 0;
     chip8->V[xAddress] &= chip8->V[yAddress];
 }
 
 void xor_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
+    chip8->V[0xF] = 0;
     // printf("XOR Before: %d, After: %d", chip8->V[xAddress], chip8->V[xAddress] ^ chip8->V[yAddress]);
     chip8->V[xAddress] ^= chip8->V[yAddress];
 }
@@ -152,18 +156,23 @@ void set_sound_timer(chip8_t *chip8, uint8_t xAddress) {
     chip8->sound_timer = chip8->V[xAddress];
 }
 
-void store_registers_to_memory(chip8_t *chip8, uint8_t xAddress) {
-    for (uint8_t i = 0; i < xAddress + 1; i++)
+// TODO: Add flag to toggle incrementing Index register and instead keep it the same
+void store_registers_to_memory(chip8_t *chip8, uint8_t value) {
+    for (uint8_t x = 0; x < value + 1; x++)
     {
-        chip8->memory[chip8->I + i] = chip8->V[i];
+        chip8->memory[chip8->I + x] = chip8->V[x];
     }
+
+    chip8->I += value + 1;
 }
 
-void load_registers_from_memory(chip8_t *chip8, uint8_t xAddress) {
-    for (uint8_t i = 0; i < xAddress + 1; i++)
+void load_registers_from_memory(chip8_t *chip8, uint8_t value) {
+    for (uint8_t x = 0; x < value + 1; x++)
     {
-        chip8->V[i] = chip8->memory[chip8->I + i];
+        chip8->V[x] = chip8->memory[chip8->I + x];
     }
+
+    chip8->I += value + 1;
 }
 
 void add_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
@@ -202,13 +211,11 @@ void reverse_subtract_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddres
     }
 }
 
-// Some ROM's that were made for newer chip8 versions expect this to have different functionality. just be weary of that
+// TODO: Add flag for toggling quirk for not setting x address to y address value
 void set_left_shift_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
     
     // Add compatibility flag for this older implementation. Do the same for right shift.
-    // chip8->V[xAddress] = chip8->V[yAddress];
-
-    printf("%d \n", yAddress);
+    chip8->V[xAddress] = chip8->V[yAddress];
 
     uint8_t bitShiftedOut = (chip8->V[xAddress] >> 7) & 0x01;
 
@@ -218,9 +225,7 @@ void set_left_shift_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress)
 }
 
 void set_right_shift_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
-    // chip8->V[xAddress] = chip8->V[yAddress];
-
-    printf("%d \n", yAddress);
+    chip8->V[xAddress] = chip8->V[yAddress];
 
     uint8_t bitShiftedOut = chip8->V[xAddress] & 0x01;
 
@@ -265,8 +270,8 @@ void set_index_register(chip8_t *chip8, uint16_t address) {
 }
 
 void draw(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress, uint8_t spriteHeight) {
-    uint8_t x = chip8->V[xAddress];
-    uint8_t y = chip8->V[yAddress];
+    uint8_t x = chip8->V[xAddress] % 64; // Values can range beyond 64, use % opperand to account for that
+    uint8_t y = chip8->V[yAddress] % 32; // Values can range beyond 32, use % opperand to account for that
     
     // Reset flag register
     chip8->V[0xF] = 0;

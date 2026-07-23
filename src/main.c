@@ -145,6 +145,10 @@ static bool init_chip8(chip8_t *chip8, const char **argv) {
         }
     }
 
+    if(argv[2] && strcmp(argv[2], "--delayQuirk") == 0) {
+        chip8->delayQuirk = true;
+    }
+
     return true;
 }
 
@@ -204,7 +208,7 @@ static uint16_t fetch(chip8_t *chip8) {
     return opcode;
 }
 
-static void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint16_t opcode) {
+static void decode(chip8_t *chip8, uint16_t opcode) {
     uint8_t nibble1 = opcode >> 12;
     uint8_t x = (opcode >> 8) & 0x0F; // nibble2
     uint8_t y = (opcode >> 4) & 0x0F; // nibble3
@@ -279,7 +283,10 @@ static void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint1
         break;
     case 0x0D:
         draw(chip8, x, y, n);
-        render(config, sdl, chip8);
+
+        if(chip8->delayQuirk) {
+            chip8->waitForFrame = true;
+        }
         break;
     case 0x0E:
         if(nn == 0x9E) {
@@ -317,10 +324,10 @@ static void decode(const config_t config, const sdl_t sdl, chip8_t *chip8, uint1
     }
 
     //TODO: Add debugging flag. use argv[2]
-    printf("PC: 0x%03X (%3d)  Opcode: 0x%04X\n",
-       chip8->pc,
-       chip8->pc,
-       opcode);
+    // printf("PC: 0x%03X (%3d)  Opcode: 0x%04X\n",
+    //    chip8->pc,
+    //    chip8->pc,
+    //    opcode);
 }
 
 int main(const int argc, const char **argv) {
@@ -371,13 +378,19 @@ int main(const int argc, const char **argv) {
             if(chip8.sound_timer > 0) chip8.sound_timer--;
 
             lastTimerTick = currentTime;
+
+            render(config, sdl, &chip8);
+
+            chip8.waitForFrame = false;
         }
 
         if(currentTime - lastCpuTick >= (1000 / chip8.cpu_hz)) {
-            uint16_t opcode = fetch(&chip8);
-            decode(config, sdl, &chip8, opcode);
-
-            lastCpuTick = currentTime;
+            if(!chip8.waitForFrame) {
+                uint16_t opcode = fetch(&chip8);
+                decode(&chip8, opcode);
+    
+                lastCpuTick = currentTime;
+            }
         }
     }
 

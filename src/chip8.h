@@ -42,6 +42,8 @@ typedef struct {
     uint16_t stack[16]; //Stores return addresses, where the chip8 goes back to after a call. Be weary of overflow. ignore it or add safety checks
     uint16_t sp; //Index of the next free slot in the stack. increases on call and decreases on return
     uint8_t key[16]; //emulator input state, emulator must map to actual keyboard
+    bool delayQuirk;
+    bool waitForFrame;
 } chip8_t;
 
 
