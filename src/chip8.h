@@ -35,7 +35,7 @@ typedef struct {
     uint8_t V[16]; //General cpu registers
     uint16_t I; //Memory address that points to data
     uint16_t pc; //Points at memory location to form opcode. (instruction)
-    uint8_t gfx[64 * 32]; //Display graphics specs
+    uint8_t gfx[64 * 32]; // (width * height) array on our chip8 struct. Each value represents whether the pixel is on or off
     uint8_t delay_timer; //Ticks 60 times per second, cpu speed runs at full but this is the main tracker of time
     uint8_t sound_timer; 
     uint32_t cpu_hz;
@@ -43,6 +43,9 @@ typedef struct {
     uint16_t sp; //Index of the next free slot in the stack. increases on call and decreases on return
     uint8_t key[16]; //emulator input state, emulator must map to actual keyboard
     bool delayQuirk;
+    bool memoryQuirk;
+    bool vfResetQuirk;
+    bool shiftingQuirk;
     bool waitForFrame;
 } chip8_t;
 

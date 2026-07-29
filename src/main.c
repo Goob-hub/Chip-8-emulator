@@ -7,8 +7,6 @@
 #include "chip8.h"
 #include "chip8_fontset.h"
 
-// TODO: Keyboard input not working yet, finish implementing that john
-
 typedef struct {
     uint32_t window_width;
     uint32_t window_height;
@@ -124,7 +122,7 @@ static void updateKeyState(chip8_t *chip8, SDL_Event *event) {
     }
 }
 
-static bool init_chip8(chip8_t *chip8, const char **argv) {
+static bool init_chip8(chip8_t *chip8, const char **argv, const int argc) {
     chip8->delay_timer = 0;
     chip8->sound_timer = 0;
     chip8->cpu_hz = 700;
@@ -145,10 +143,21 @@ static bool init_chip8(chip8_t *chip8, const char **argv) {
         }
     }
 
-    if(argv[2] && strcmp(argv[2], "--delayQuirk") == 0) {
-        chip8->delayQuirk = true;
+    for (uint8_t i = 1; i < argc + 1; i++)
+    {
+        const char *currentFlag = argv[i];
+        
+        if(currentFlag && strcmp(currentFlag, "--delayQuirk") == 0) {
+            chip8->delayQuirk = true;
+        } else if(currentFlag && strcmp(currentFlag, "--memoryQuirk") == 0) {
+            chip8->memoryQuirk = true;
+        } else if(currentFlag && strcmp(currentFlag, "--vfResetQuirk") == 0) {
+            chip8->vfResetQuirk = true;
+        } else if(currentFlag && strcmp(currentFlag, "--shiftingQuirk") == 0) {
+            chip8->shiftingQuirk = true;
+        }
     }
-
+    
     return true;
 }
 
@@ -350,7 +359,7 @@ int main(const int argc, const char **argv) {
         exit(1);
     }
 
-    if(!init_chip8(&chip8, argv)) {
+    if(!init_chip8(&chip8, argv, argc)) {
         SDL_Quit();
         exit(1);
     }
