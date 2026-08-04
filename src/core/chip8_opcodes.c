@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
-#include "chip8.h"
+#include <stdlib.h>
+#include "chip8_struct.h"
 
 //x = (index) % width 
 //y = (index) / width
@@ -97,7 +98,7 @@ void jump_with_offset(chip8_t *chip8, uint16_t address) {
 }
 
 void set_random_masked_value(chip8_t *chip8, uint8_t xAddress, uint8_t value) {
-    chip8->V[xAddress] = value & (uint8_t)rand();
+    chip8->V[xAddress] = value & (uint8_t) rand();
 }
 
 void copy_register(chip8_t *chip8, uint8_t xAddress, uint8_t yAddress) {
