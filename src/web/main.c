@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <SDL3/SDL.h>
+#include <emscripten.h>
+#include <emscripten/html5.h>
 #include "chip8_opcodes.h"
 #include "chip8_struct.h"
 #include "chip8.h"
@@ -20,26 +22,33 @@ typedef struct {
 typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
-    SDL_Texture *bitmapTexture;
 } sdl_t;
 
-const SDL_Scancode keymap[16] = {
-    SDL_SCANCODE_X, // 0
-    SDL_SCANCODE_1, // 1
-    SDL_SCANCODE_2, // 2
-    SDL_SCANCODE_3, // 3
-    SDL_SCANCODE_Q, // 4
-    SDL_SCANCODE_W, // 5
-    SDL_SCANCODE_E, // 6
-    SDL_SCANCODE_A, // 7
-    SDL_SCANCODE_S, // 8
-    SDL_SCANCODE_D, // 9
-    SDL_SCANCODE_Z, // A
-    SDL_SCANCODE_C, // B
-    SDL_SCANCODE_4, // C
-    SDL_SCANCODE_R, // D
-    SDL_SCANCODE_F, // E
-    SDL_SCANCODE_V  // F
+typedef struct {
+    chip8_t chip8;
+    config_t config;
+    sdl_t sdl;
+    double lastCpuTick;
+    double lastTimerTick;
+} app_t;
+
+const char *keymap[16] = {
+    "KeyX",    // 0
+    "Digit1",  // 1
+    "Digit2",  // 2
+    "Digit3",  // 3
+    "KeyQ",    // 4
+    "KeyW",    // 5
+    "KeyE",    // 6
+    "KeyA",    // 7
+    "KeyS",    // 8
+    "KeyD",    // 9
+    "KeyZ",    // A
+    "KeyC",    // B
+    "Digit4",  // C
+    "KeyR",    // D
+    "KeyF",    // E
+    "KeyV"     // F
 };
 
 static bool init_sdl(sdl_t *sdl, const config_t config) {
@@ -62,50 +71,17 @@ static bool init_sdl(sdl_t *sdl, const config_t config) {
     
     sdl->renderer = SDL_CreateRenderer(sdl->window, NULL);
 
-    sdl->bitmapTexture = SDL_CreateTexture(sdl->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, config.window_scale * config.window_width, config.window_scale * config.window_height);
-
     return true;
-}
-
-static void detectKeyboardEvent(chip8_t *chip8, SDL_Event *event) {
-
-    SDL_Scancode scancode = event->key.scancode;
-    int8_t keyIndex = -1;
-
-    for (unsigned long i = 0; i < sizeof(keymap) / sizeof(keymap[0]); i++)
-    {
-        if(keymap[i] == scancode) {
-            keyIndex = i;
-            break;
-        }
-    }
-
-    if(keyIndex == -1) {
-        printf("Unrecognized key pressed.\n");
-        return;
-    }
-
-    switch (event->type)
-    {
-        case SDL_EVENT_KEY_DOWN:
-            chip8_update_key_state(chip8, keyIndex, true);
-            break;
-        case SDL_EVENT_KEY_UP:
-            chip8_update_key_state(chip8, keyIndex, false);
-            break;
-        default:
-            break;
-    }
 }
 
 static void drawPixel(const config_t config, const sdl_t sdl, uint8_t x, uint8_t y) {    
     SDL_FRect r;
-
+    
     r.h = 1 * config.window_scale;
     r.w = 1 * config.window_scale;
     r.x = x * config.window_scale;
     r.y = y * config.window_scale;
-
+    
     SDL_RenderFillRect(sdl.renderer, &r);
 }
 
@@ -128,85 +104,123 @@ static void render(const config_t config, const sdl_t sdl, chip8_t *chip8) {
     SDL_SetRenderDrawColor(sdl.renderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(sdl.renderer);
     SDL_SetRenderDrawColor(sdl.renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
+    
     for (uint16_t i = 0; i < sizeof(chip8->gfx) / sizeof(chip8->gfx[0]); i++)
     {
         uint8_t currentPixel = chip8->gfx[i];
-
+        
         if(currentPixel == 0x01) {
             uint8_t x = (i) % 64;
             uint8_t y = (i) / 64;
-
+            
             drawPixel(config, sdl, x, y);
         }
     }
-
+    
     SDL_RenderPresent(sdl.renderer);
 }
 
+static EM_BOOL onKeyDownEvent(int eventType, const EmscriptenKeyboardEvent *keyEvent, void *userData) {
+    chip8_t *chip8 = (chip8_t *)userData;
+    int8_t keyIndex = -1;
+
+    for (unsigned long i = 0; i < sizeof(keymap) / sizeof(keymap[0]); i++)
+    {
+        if(strcmp(keymap[i], keyEvent->code) == 0) {
+            keyIndex = i;
+            break;
+        }
+    }
+
+    if(keyIndex == -1) {
+        printf("Unrecognized key pressed.\n");
+        return;
+    }
+
+    chip8_update_key_state(chip8, keyIndex, true);
+
+    return EM_TRUE;
+}
+
+static EM_BOOL onKeyUpEvent(int eventType, const EmscriptenKeyboardEvent *keyEvent, void *userData) {
+    chip8_t *chip8 = (chip8_t *)userData;   
+    int8_t keyIndex = -1;
+
+    for (unsigned long i = 0; i < sizeof(keymap) / sizeof(keymap[0]); i++)
+    {
+        if(strcmp(keymap[i], keyEvent->code) == 0) {
+            keyIndex = i;
+            break;
+        }
+    }
+
+    if(keyIndex == -1) {
+        printf("Unrecognized key pressed.\n");
+        return;
+    }
+
+    chip8_update_key_state(chip8, keyIndex, false);
+
+    return EM_TRUE;
+}
+
+EM_BOOL one_iteration(double currentTime, void *userData) {
+    app_t *app = (app_t *)userData;
+    double timerPeriod = 1000 / 60;
+    double cpuPeriod = 1000 / app->chip8.cpu_hz;
+
+    while(currentTime - app->lastCpuTick >= cpuPeriod) {
+        if(!app->chip8.waitForFrame) {
+            chip8_cycle(&app->chip8);
+            app->lastCpuTick += cpuPeriod;
+        }
+    }
+
+    while(currentTime - app->lastTimerTick >= timerPeriod) {
+        chip8_update_timers(&app->chip8);
+        
+        app->lastTimerTick += timerPeriod;
+    }
+    
+    render(app->config, app->sdl, &app->chip8);
+
+    return EM_TRUE;
+}
+
 int main(const int argc, const char **argv) {
-    sdl_t sdl = {0};
-    config_t config = {0};
-    chip8_t chip8 = {0};
-    uint64_t lastCpuTick = 0;
-    uint64_t lastTimerTick = 0;
-    bool done = false;
+    app_t app = {0};
 
     if (argc < 2) {
         printf("Usage: %s <rom>\n", argv[0]);
         return 1;
     }
 
-    setup_config(&config);
+    setup_config(&app.config);
 
-    if(!init_sdl(&sdl, config)) {
+    if(!init_sdl(&app.sdl, app.config)) {
         SDL_Quit();
         exit(1);
     }
 
-    if(!chip8_init(&chip8, argv, argc)) {
+    if(!chip8_init(&app.chip8, argv, argc)) {
         SDL_Quit();
         exit(1);
     }
 
-    if(!chip8_load_rom(&chip8, argv[1])) {
+    if(!chip8_load_rom(&app.chip8, argv[1])) {
         SDL_Quit();
         exit(1);
     }
 
     srand(time(NULL));
 
-    while (!done) {
-        SDL_Event event;
+    #ifdef __EMSCRIPTEN__
+        emscripten_request_animation_frame_loop(one_iteration, &app);
+        emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &app.chip8, EM_TRUE, onKeyDownEvent);
+        emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &app.chip8, EM_TRUE, onKeyUpEvent);
 
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT) {
-                done = true;
-            }
-
-            if(event.type == SDL_EVENT_KEY_UP || event.type == SDL_EVENT_KEY_DOWN) {
-                detectKeyboardEvent(&chip8, &event);
-            }
-        }  
-
-        uint64_t currentTime = SDL_GetTicks();
-
-        if(currentTime - lastTimerTick >= (1000 / 60)) {
-            chip8_update_timers(&chip8);
-
-            lastTimerTick = currentTime;
-
-            render(config, sdl, &chip8);
-        }
-
-        if(currentTime - lastCpuTick >= (1000 / chip8.cpu_hz)) {
-            if(!chip8.waitForFrame) {
-                chip8_cycle(&chip8);
-                lastCpuTick = currentTime;
-            }
-        }
-    }
-
-    final_cleanup(sdl);
-    exit(0);
+        return 0;
+    #else
+        final_cleanup(app.sdl);
+    #endif
 }
