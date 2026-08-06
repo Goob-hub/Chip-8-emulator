@@ -11,8 +11,6 @@
 #include "chip8.h"
 #include "chip8_fontset.h"
 
-// TODO: Use emscripten api to handle browser events. and structure code to handle browser implementation
-
 typedef struct {
     uint32_t window_width;
     uint32_t window_height;
@@ -186,7 +184,7 @@ EM_BOOL one_iteration(double currentTime, void *userData) {
 
     return EM_TRUE;
 }
-
+// TODO: Figure out how to load roms differently because its loaded without command line arguments. frontend user can select roms to load into the chip8. Find where you should take in the rom pointer as a parameter and load accordingly. Also set default flags in init
 int main(const int argc, const char **argv) {
     app_t app = {0};
 
