@@ -184,14 +184,20 @@ EM_BOOL one_iteration(double currentTime, void *userData) {
 
     return EM_TRUE;
 }
+
 // TODO: Figure out how to load roms differently because its loaded without command line arguments. frontend user can select roms to load into the chip8. Find where you should take in the rom pointer as a parameter and load accordingly. Also set default flags in init
-int main(const int argc, const char **argv) {
+int main() {
     app_t app = {0};
 
-    if (argc < 2) {
-        printf("Usage: %s <rom>\n", argv[0]);
-        return 1;
-    }
+    // Default flags for emulator to run. Rom wont be loaded initially so the first string is blank
+    const char *argv = {
+        "",
+        "--delayQuirk",
+        "--memoryQuirk",
+        "--vfResetQuirk",
+        "--shiftingQuirk"
+    };
+    const int argc = 5;
 
     setup_config(&app.config);
 
@@ -201,11 +207,6 @@ int main(const int argc, const char **argv) {
     }
 
     if(!chip8_init(&app.chip8, argv, argc)) {
-        SDL_Quit();
-        exit(1);
-    }
-
-    if(!chip8_load_rom(&app.chip8, argv[1])) {
         SDL_Quit();
         exit(1);
     }

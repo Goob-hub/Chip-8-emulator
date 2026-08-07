@@ -167,7 +167,7 @@ int main(const int argc, const char **argv) {
         exit(1);
     }
 
-    if(!chip8_load_rom(&chip8, argv[1])) {
+    if(!chip8_load_rom_filepath(&chip8, argv[1])) {
         SDL_Quit();
         exit(1);
     }

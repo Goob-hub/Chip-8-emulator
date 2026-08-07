@@ -7,7 +7,7 @@
 #include "chip8_struct.h"
 #include "chip8_fontset.h"
 
-bool chip8_load_rom(chip8_t *chip8, const char *filepath) {
+bool chip8_load_rom_filepath(chip8_t *chip8, const char *filepath) {
     FILE* filePointer = fopen(filepath, "rb"); 
 
     if(filePointer == NULL) {
@@ -34,6 +34,18 @@ bool chip8_load_rom(chip8_t *chip8, const char *filepath) {
 
     return true;
 }
+
+bool chip8_load_rom_bytes(chip8_t *chip8, const uint8_t *rom, const unsigned long size) {
+    if(size > sizeof(chip8->memory) - 512) {
+        perror("Unable to load rom, file is too large.");
+        return false;
+    }
+    
+    memcpy(&chip8->memory[0x200], rom, size);
+
+    return true;
+}
+
 
 bool chip8_init(chip8_t *chip8, const char **argv, const int argc) {
     chip8->delay_timer = 0;
