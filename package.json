@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+      "build:web": "make web"
+  }
+}

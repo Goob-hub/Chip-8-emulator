@@ -19,7 +19,8 @@
 
 -- For building the web version: --
 
-- make web (Will use emcc to compile the chip8 code into wasm and javascript. Will output into build/web directories)
+- run npm -i (emcc needs typescript to generate types for the compiled javascript of the chip8)
+- npm run build:web (Will use emcc to compile the chip8 code into wasm, javascript, and its related typescript types. Will output into build/web directory.)
 
 -- How to use the web version: --
 

@@ -12,10 +12,11 @@ sdl:
 	mkdir -p $(SDL_BUILD_DIR) 
 	gcc $(CFLAGS) $(CORE_SRC) src/sdl/main.c -o $(SDL_BUILD_DIR)/chip8 $(shell pkg-config --cflags --libs sdl3) 
 
+# Add seperate build option for pure javascript with no types?
 web:
 	mkdir -p $(WEB_BUILD_DIR)
-	emcc $(CFLAGS) $(CORE_SRC) src/web/main.c -o $(WEB_BUILD_DIR)/chip8.html \
-	-sEXPORTED_FUNCTIONS=$(WEB_EXPORTED_CHIP8_FUNCTIONS) -sEXPORTED_RUNTIME_METHODS=ccall,cwrap -sEXPORT_ES6=1 -sUSE_SDL=3
+	emcc $(CFLAGS) $(CORE_SRC) src/web/main.c -o $(WEB_BUILD_DIR)/chip8.js \
+	-sEXPORTED_FUNCTIONS=$(WEB_EXPORTED_CHIP8_FUNCTIONS) -sEXPORTED_RUNTIME_METHODS=ccall,cwrap -sEXPORT_ES6=1 -sMODULARIZE=1 -sUSE_SDL=3 --emit-tsd chip8.d.ts
 
 .PHONY: clean
 clean : 	
