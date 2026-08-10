@@ -16,7 +16,7 @@ bool chip8_init(chip8_t *chip8, const char **argv, int argc);
 /**
  * Loads a CHIP-8 ROM into memory starting at 0x200.
  */
-bool chip8_load_rom(chip8_t *chip8, const char *filepath);
+bool chip8_load_rom_filepath(chip8_t *chip8, const char *filepath);
 
 /**
  * Executes a single CHIP-8 CPU cycle.

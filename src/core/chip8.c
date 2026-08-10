@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
-#include <SDL3/SDL.h>
 #include "chip8_opcodes.h"
 #include "chip8_struct.h"
 #include "chip8_fontset.h"

@@ -132,7 +132,7 @@ static EM_BOOL onKeyDownEvent(int eventType, const EmscriptenKeyboardEvent *keyE
 
     if(keyIndex == -1) {
         printf("Unrecognized key pressed.\n");
-        return;
+        return EM_FALSE;
     }
 
     chip8_update_key_state(chip8, keyIndex, true);
@@ -154,7 +154,7 @@ static EM_BOOL onKeyUpEvent(int eventType, const EmscriptenKeyboardEvent *keyEve
 
     if(keyIndex == -1) {
         printf("Unrecognized key pressed.\n");
-        return;
+        return EM_FALSE;
     }
 
     chip8_update_key_state(chip8, keyIndex, false);
@@ -206,7 +206,7 @@ int main() {
         exit(1);
     }
 
-    if(!chip8_init(&app.chip8, argv, argc)) {
+    if(!chip8_init(&app.chip8, &argv, argc)) {
         SDL_Quit();
         exit(1);
     }

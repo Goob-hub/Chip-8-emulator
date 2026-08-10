@@ -55,5 +55,6 @@ build
 
 SDL3/
 Roms/
+build/
 
 .dwo
