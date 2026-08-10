@@ -2,7 +2,7 @@ CFLAGS = -Wall -Wextra -Wpedantic -g -Isrc/core -Isrc/sdl -Isrc/web
 CORE_SRC = src/core/chip8.c src/core/chip8_opcodes.c src/core/chip8_fontset.c
 
 WEB_EXPORTED_CHIP8_FUNCTIONS = '["_chip8_load_rom_bytes","_malloc","_free"]'
-WEB_EXPORTED_RUNTIME_METHODS = '["ccall","ccwrap","HEAPU8"]'
+WEB_EXPORTED_RUNTIME_METHODS = '["ccall","cwrap","HEAPU8"]'
 
 SDL_BUILD_DIR = build/sdl
 WEB_BUILD_DIR = build/web
