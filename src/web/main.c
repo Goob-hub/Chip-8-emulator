@@ -30,7 +30,7 @@ typedef struct {
     double lastTimerTick;
 } app_t;
 
-const char *keymap[16] = {
+static const char *keymap[16] = {
     "KeyX",    // 0
     "Digit1",  // 1
     "Digit2",  // 2
@@ -48,6 +48,16 @@ const char *keymap[16] = {
     "KeyF",    // E
     "KeyV"     // F
 };
+// Default flags for emulator to run. Rom wont be loaded initially so the first string is blank
+static const char *argv = {
+    "",
+    "--delayQuirk",
+    "--memoryQuirk",
+    "--vfResetQuirk",
+    "--shiftingQuirk"
+};
+static const int argc = 5;
+static app_t app = {0};
 
 static bool init_sdl(sdl_t *sdl, const config_t config) {
     if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)){
@@ -162,7 +172,7 @@ static EM_BOOL onKeyUpEvent(int eventType, const EmscriptenKeyboardEvent *keyEve
     return EM_TRUE;
 }
 
-EM_BOOL one_iteration(double currentTime, void *userData) {
+static EM_BOOL one_iteration(double currentTime, void *userData) {
     app_t *app = (app_t *)userData;
     double timerPeriod = 1000 / 60;
     double cpuPeriod = 1000 / app->chip8.cpu_hz;
@@ -185,19 +195,24 @@ EM_BOOL one_iteration(double currentTime, void *userData) {
     return EM_TRUE;
 }
 
-// TODO: Figure out how to load roms differently because its loaded without command line arguments. frontend user can select roms to load into the chip8. Find where you should take in the rom pointer as a parameter and load accordingly. Also set default flags in init
-int main() {
-    app_t app = {0};
+// Exported functions that are exposed and can be called from the web
 
-    // Default flags for emulator to run. Rom wont be loaded initially so the first string is blank
-    const char *argv = {
-        "",
-        "--delayQuirk",
-        "--memoryQuirk",
-        "--vfResetQuirk",
-        "--shiftingQuirk"
-    };
-    const int argc = 5;
+EMSCRIPTEN_KEEPALIVE
+static bool web_load_rom_chip8(const uint8_t *rom, const unsigned long size) {
+    chip8_load_rom_bytes(&app.chip8, rom, size);
+}
+
+EMSCRIPTEN_KEEPALIVE
+static bool web_reset_chip8() {
+    app = (app_t){0};
+}
+
+EMSCRIPTEN_KEEPALIVE
+static bool web_toggle_pause_chip8() {
+    app.chip8.isPaused = !app.chip8.isPaused;
+}
+
+int main() {
 
     setup_config(&app.config);
 

@@ -46,6 +46,7 @@ typedef struct {
     bool vfResetQuirk;
     bool shiftingQuirk;
     bool waitForFrame;
+    bool isPaused;
 } chip8_t;
 
 #endif

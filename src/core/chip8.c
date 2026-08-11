@@ -46,7 +46,6 @@ bool chip8_load_rom_bytes(chip8_t *chip8, const uint8_t *rom, const unsigned lon
     return true;
 }
 
-
 bool chip8_init(chip8_t *chip8, const char **argv, const int argc) {
     chip8->delay_timer = 0;
     chip8->sound_timer = 0;
@@ -213,6 +212,10 @@ void decode_opcode(chip8_t *chip8, uint16_t opcode) {
 }
 
 void chip8_update_timers(chip8_t *chip8) {
+    if(chip8->isPaused) {
+        return;
+    }
+
     if(chip8->delay_timer > 0) chip8->delay_timer--;
 
     if(chip8->sound_timer > 0) chip8->sound_timer--;
@@ -221,6 +224,10 @@ void chip8_update_timers(chip8_t *chip8) {
 }
 
 void chip8_cycle(chip8_t *chip8) {
+    if(chip8->isPaused) {
+        return;
+    }
+
     uint16_t opcode = fetch_opcode(chip8);
     decode_opcode(chip8, opcode);
 }
