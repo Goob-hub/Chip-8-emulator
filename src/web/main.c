@@ -28,6 +28,7 @@ typedef struct {
     sdl_t sdl;
     double lastCpuTick;
     double lastTimerTick;
+    bool isLogging;
 } app_t;
 
 static const char *keymap[16] = {
@@ -49,7 +50,7 @@ static const char *keymap[16] = {
     "KeyV"     // F
 };
 // Default flags for emulator to run. Rom wont be loaded initially so the first string is blank
-static const char *argv = {
+static const char *argv[] = {
     "",
     "--delayQuirk",
     "--memoryQuirk",
@@ -177,11 +178,26 @@ static EM_BOOL one_iteration(double currentTime, void *userData) {
     double timerPeriod = 1000 / 60;
     double cpuPeriod = 1000 / app->chip8.cpu_hz;
 
+    if(app->isLogging) {
+        printf("frame: %f, pc: %04X\n", currentTime, app->chip8.pc);
+    }
+
+    if (app->lastCpuTick == 0) {
+        app->lastCpuTick = currentTime;
+        app->lastTimerTick = currentTime;
+    }
+
+    if (app->chip8.isPaused) {
+        render(app->config, app->sdl, &app->chip8);
+        return EM_TRUE;
+    }
+
     while(currentTime - app->lastCpuTick >= cpuPeriod) {
         if(!app->chip8.waitForFrame) {
             chip8_cycle(&app->chip8);
-            app->lastCpuTick += cpuPeriod;
         }
+
+        app->lastCpuTick += cpuPeriod;
     }
 
     while(currentTime - app->lastTimerTick >= timerPeriod) {
@@ -199,20 +215,43 @@ static EM_BOOL one_iteration(double currentTime, void *userData) {
 
 EMSCRIPTEN_KEEPALIVE
 bool web_load_rom_chip8(const uint8_t *rom, const unsigned long size) {
-    return chip8_load_rom_bytes(&app.chip8, rom, size);
+    
+    bool result = chip8_load_rom_bytes(&app.chip8, rom, size);
+    
+    if(app.isLogging) {
+        printf("Loading ROM: %zu bytes\n", size);
+        printf("Load result: %d\n", result);
+        printf("First bytes: %02X %02X %02X %02X\n",
+            app.chip8.memory[0x200],
+            app.chip8.memory[0x201],
+            app.chip8.memory[0x202],
+            app.chip8.memory[0x203]);
+    }
+
+    return result;
 }
 
 EMSCRIPTEN_KEEPALIVE
-void web_reset_chip8() {
-    app = (app_t){0};
+void web_reset_chip8(void) {
+    chip8_init(&app.chip8, argv, argc);
+
+    app.lastCpuTick = 0;
+    app.lastTimerTick = 0;
 }
 
 EMSCRIPTEN_KEEPALIVE
-void web_toggle_pause_chip8() {
+void web_toggle_pause_chip8(void) {
     app.chip8.isPaused = !app.chip8.isPaused;
 }
 
-int main() {
+EMSCRIPTEN_KEEPALIVE
+void web_toggle_logs(void) {
+    app.isLogging = !app.isLogging;
+}
+
+int main(void) {
+
+    // TODO: There is a bug in here somewhere. Future me please fix.
 
     setup_config(&app.config);
 
@@ -221,9 +260,13 @@ int main() {
         exit(1);
     }
 
-    if(!chip8_init(&app.chip8, &argv, argc)) {
+    if(!chip8_init(&app.chip8, argv, argc)) {
         SDL_Quit();
         exit(1);
+    }
+
+    if(app.isLogging) {
+        printf("CHIP-8 initialized, PC = %04X\n", app.chip8.pc);
     }
 
     srand(time(NULL));
