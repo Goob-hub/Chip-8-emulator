@@ -198,17 +198,17 @@ static EM_BOOL one_iteration(double currentTime, void *userData) {
 // Exported functions that are exposed and can be called from the web
 
 EMSCRIPTEN_KEEPALIVE
-static bool web_load_rom_chip8(const uint8_t *rom, const unsigned long size) {
-    chip8_load_rom_bytes(&app.chip8, rom, size);
+bool web_load_rom_chip8(const uint8_t *rom, const unsigned long size) {
+    return chip8_load_rom_bytes(&app.chip8, rom, size);
 }
 
 EMSCRIPTEN_KEEPALIVE
-static bool web_reset_chip8() {
+void web_reset_chip8() {
     app = (app_t){0};
 }
 
 EMSCRIPTEN_KEEPALIVE
-static bool web_toggle_pause_chip8() {
+void web_toggle_pause_chip8() {
     app.chip8.isPaused = !app.chip8.isPaused;
 }
 

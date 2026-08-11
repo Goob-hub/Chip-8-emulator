@@ -11,7 +11,6 @@ sdl:
 	mkdir -p $(SDL_BUILD_DIR) 
 	gcc $(CFLAGS) $(CORE_SRC) src/sdl/main.c -o $(SDL_BUILD_DIR)/chip8 $(shell pkg-config --cflags --libs sdl3) 
 
-# Add seperate build option for pure javascript with no types?
 web:
 	mkdir -p $(WEB_BUILD_DIR)
 	emcc $(CFLAGS) $(CORE_SRC) src/web/main.c -o $(WEB_BUILD_DIR)/chip8.js \
