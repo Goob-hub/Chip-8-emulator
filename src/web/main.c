@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
-#include <SDL3/SDL.h>
+#include <SDL2/SDL.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include "chip8_opcodes.h"
@@ -61,13 +61,16 @@ static const int argc = 5;
 static app_t app = {0};
 
 static bool init_sdl(sdl_t *sdl, const config_t config) {
-    if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)){
-        printf("Error: SDL initialization failed");
+
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        fprintf(stderr, "SDL_Init failed: '%s'\n", SDL_GetError());
         return false;
     }
 
     sdl->window = SDL_CreateWindow(
         "My chip8 window",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
         config.window_width * config.window_scale,
         config.window_height * config.window_scale,
         0
@@ -78,20 +81,20 @@ static bool init_sdl(sdl_t *sdl, const config_t config) {
         return false;
     }
     
-    sdl->renderer = SDL_CreateRenderer(sdl->window, NULL);
+    sdl->renderer = SDL_CreateRenderer(sdl->window, -1, SDL_RENDERER_ACCELERATED);
 
     return true;
 }
 
 static void drawPixel(const config_t config, const sdl_t sdl, uint8_t x, uint8_t y) {    
-    SDL_FRect r;
-    
-    r.h = 1 * config.window_scale;
-    r.w = 1 * config.window_scale;
-    r.x = x * config.window_scale;
-    r.y = y * config.window_scale;
-    
-    SDL_RenderFillRect(sdl.renderer, &r);
+    SDL_FRect r = {
+        .x = x * config.window_scale,
+        .y = y * config.window_scale,
+        .w = config.window_scale,
+        .h = config.window_scale
+    };
+
+    SDL_RenderFillRectF(sdl.renderer, &r);
 }
 
 
@@ -99,7 +102,7 @@ static void setup_config(config_t *config) {
     *config = (config_t) {
         .window_width = 64,
         .window_height = 32,
-        .window_scale = 20
+        .window_scale = 1
     };
 }
 
@@ -279,5 +282,6 @@ int main(void) {
         return 0;
     #else
         final_cleanup(app.sdl);
+        return 0;
     #endif
 }

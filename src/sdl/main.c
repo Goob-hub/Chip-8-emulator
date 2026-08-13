@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
-#include <SDL3/SDL.h>
+#include <SDL2/SDL.h>
 #include "chip8_opcodes.h"
 #include "chip8_struct.h"
 #include "chip8.h"
@@ -48,6 +48,8 @@ static bool init_sdl(sdl_t *sdl, const config_t config) {
 
     sdl->window = SDL_CreateWindow(
         "My chip8 window",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
         config.window_width * config.window_scale,
         config.window_height * config.window_scale,
         0
@@ -58,7 +60,7 @@ static bool init_sdl(sdl_t *sdl, const config_t config) {
         return false;
     }
     
-    sdl->renderer = SDL_CreateRenderer(sdl->window, NULL);
+    sdl->renderer = SDL_CreateRenderer(sdl->window, -1, SDL_RENDERER_ACCELERATED);
 
     sdl->bitmapTexture = SDL_CreateTexture(sdl->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, config.window_scale * config.window_width, config.window_scale * config.window_height);
 
@@ -67,7 +69,7 @@ static bool init_sdl(sdl_t *sdl, const config_t config) {
 
 static void detectKeyboardEvent(chip8_t *chip8, SDL_Event *event) {
 
-    SDL_Scancode scancode = event->key.scancode;
+    SDL_Scancode scancode = event->key.keysym.scancode;
     int8_t keyIndex = -1;
 
     for (unsigned long i = 0; i < sizeof(keymap) / sizeof(keymap[0]); i++)
@@ -85,10 +87,10 @@ static void detectKeyboardEvent(chip8_t *chip8, SDL_Event *event) {
 
     switch (event->type)
     {
-        case SDL_EVENT_KEY_DOWN:
+        case SDL_KEYDOWN:
             chip8_update_key_state(chip8, keyIndex, true);
             break;
-        case SDL_EVENT_KEY_UP:
+        case SDL_KEYUP:
             chip8_update_key_state(chip8, keyIndex, false);
             break;
         default:
@@ -97,14 +99,14 @@ static void detectKeyboardEvent(chip8_t *chip8, SDL_Event *event) {
 }
 
 static void drawPixel(const config_t config, const sdl_t sdl, uint8_t x, uint8_t y) {    
-    SDL_FRect r;
+    SDL_FRect r = {
+        .x = x * config.window_scale,
+        .y = y * config.window_scale,
+        .w = config.window_scale,
+        .h = config.window_scale
+    };
 
-    r.h = 1 * config.window_scale;
-    r.w = 1 * config.window_scale;
-    r.x = x * config.window_scale;
-    r.y = y * config.window_scale;
-
-    SDL_RenderFillRect(sdl.renderer, &r);
+    SDL_RenderFillRectF(sdl.renderer, &r);
 }
 
 
@@ -178,11 +180,11 @@ int main(const int argc, const char **argv) {
         SDL_Event event;
 
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT) {
+            if (event.type == SDL_Quit) {
                 done = true;
             }
 
-            if(event.type == SDL_EVENT_KEY_UP || event.type == SDL_EVENT_KEY_DOWN) {
+            if(event.type == SDL_KEYUP || event.type == SDL_KEYDOWN) {
                 detectKeyboardEvent(&chip8, &event);
             }
         }  
