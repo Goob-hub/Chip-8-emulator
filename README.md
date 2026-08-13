@@ -6,13 +6,13 @@ In order to build the web implementaion of the chip8, you need to install emcc v
 
 Also ensure that you have sdl2 somewhere on your system for the sdl native build.
 
-## -- For building the sdl version: --
+## For building the sdl version:
 
 - make sdl (Will output the binary of the chip8 in build/sdl directories)  
 
 - Example command to run it: ./build/sdl/chip8 ./Roms/IBMLogo.ch8 --delayQuirk --memoryQuirk --shiftingQuirk --vfResetQuirk
 
-### -- List of flags you can add to toggle quirks when running the sdl build of the chip8: --
+### List of flags you can add to toggle quirks when running the sdl build of the chip8:
 
 - **--delayQuirk:** 
 The delayQuirk flag will ensure the chip8 waits for the current draw instruction render to finish before fetching and executing more opcodes. If this flag is not toggled, the chip8 will continue its fetch/decode cycle regardless if it is still rendering a frame.
@@ -29,7 +29,7 @@ The vfResetQuirk flag will ensure the V[F] register is set to 0 when performing 
 - **--shiftingQuirk:** 
 The shiftingQuirk flag will ensure that V[x] is set to V[y] when executing the opcodes 8xy6 and 8xyE respectively. If this flag is not toggled then V[x] will not be set to V[y].
 
-## -- For building the web version: --
+## For building the web version:
 
 - **run npm -i** 
 This command will install typescript locally in the project. Emcc needs typescript to generate types for the chip8.js it generates
@@ -37,7 +37,7 @@ This command will install typescript locally in the project. Emcc needs typescri
 - **npm run build:web** 
 Will use emcc to compile the chip8 code into wasm, javascript, and its related typescript types. Will output into build/web directory.
 
-## -- How to use the web version: --
+## How to use the web version:
 
 When using the web build, you will need to ensure that the js, wasm, and typescript definitions of the js live in the same folder. The makefile build command for the web will build the chip8 into an es6 module that you can import like you would any other module. 
 
@@ -62,19 +62,19 @@ After initializing your chip8 using javascript, there are a handful of exposed f
 
 ### Below is a summary of each exposed function that comes from the chip8 that you can use to interact with it through your frontends code:
 
-- **web_reset_chip8(void);**
+- **```web_reset_chip8(void);```**
 This function will reset the state of the chip8 emulator, it will not reset memory. The timers, registers, stack, gfx, etc will be reset to 0.
 
 
-- **web_toggle_pause_chip8(void);** 
+- **```web_toggle_pause_chip8(void);```** 
 This function will act as a toggle to pause/start emulator opcode execution and rendering. Simply sets a boolean to true/false depending on its original value.
 
 
-- **web_toggle_logs(void);** 
+- **```web_toggle_logs(void);```** 
 This function will toggle logs to be enabled from the chip8. Useful for debugging if things are acting up. Logs will appear in the browser inspect console.
 
 
-- **web_load_rom_chip8(const uint_8 *rom, const unsigned long size);** 
+- **```web_load_rom_chip8(const uint_8 *rom, const unsigned long size);```**
 This function will load a specified rom into the chip8's memory. Roms will have to live somewhere in your frontend for your browser to access them. Below is an example of how to properly load a rom into your chip8 web build using javascript 
 
 ```
