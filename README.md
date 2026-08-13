@@ -8,9 +8,9 @@ Also ensure that you have sdl2 somewhere on your system for the sdl native build
 
 ## For building the sdl version:
 
-- make sdl (Will output the binary of the chip8 in build/sdl directories)  
+- **make sdl:** Will output the binary of the chip8 in build/sdl directories
 
-- Example command to run it: ./build/sdl/chip8 ./Roms/IBMLogo.ch8 --delayQuirk --memoryQuirk --shiftingQuirk --vfResetQuirk
+- **Example command to run sdl native build:** ./build/sdl/chip8 ./Roms/IBMLogo.ch8 --delayQuirk --memoryQuirk --shiftingQuirk --vfResetQuirk
 
 ### List of flags you can add to toggle quirks when running the sdl build of the chip8:
 
