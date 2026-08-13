@@ -1,29 +1,41 @@
 # Chip 8 emulator
 
-Below is an outline of how to build/test my project.
+This will serve as a guide to help you build and test my chip8 project.
+
+In order to build the web implementaion of the chip8, you need to install emcc version 6.06. Later versions might work but that depends on what changes.
+
+Also ensure that you have sdl2 somewhere on your system for the sdl native build.
 
 ## -- For building the sdl version: --
 
 - make sdl (Will output the binary of the chip8 in build/sdl directories)  
 
-## -- How to run the sdl version: --
-
-- Example command: ./build/sdl/chip8 ./Roms/IBMLogo.ch8 --delayQuirk --memoryQuirk --shiftingQuirk --vfResetQuirk
+- Example command to run it: ./build/sdl/chip8 ./Roms/IBMLogo.ch8 --delayQuirk --memoryQuirk --shiftingQuirk --vfResetQuirk
 
 ### -- List of flags you can add to toggle quirks when running the sdl build of the chip8: --
 
-- --delayQuirk: This flag will ensure the chip8 waits for the current draw instruction render to finish before fetching and executing more opcodes. If this flag is not toggled, the chip8 will continue its fetch/decode cycle regardless if it is still rendering a frame.
+- **--delayQuirk:** 
+The delayQuirk flag will ensure the chip8 waits for the current draw instruction render to finish before fetching and executing more opcodes. If this flag is not toggled, the chip8 will continue its fetch/decode cycle regardless if it is still rendering a frame.
 
-- --memoryQuirk: This flag will ensure the I register is incremented by (x + 1) when storing and loading registers to and from memory. I is left unchanged if this flag is not toggled.
 
-- --vfResetQuirk: This flag will ensure the V[F] register is set to 0 when performing &, |, ^ bitwise operations on registers. If this flag is not toggled the V[F] register will remain unchanged during these operations.
+- **--memoryQuirk:** 
+The memoryQuirk flag will ensure the I register is incremented by (x + 1) when storing and loading registers to and from memory. I is left unchanged if this flag is not toggled.
 
-- --shiftingQuirk: This flag will ensure that V[x] is set to V[y] when executing the opcodes 8xy6 and 8xyE respectively. If this flag is not toggled then V[x] will not be set to V[y].
 
--- For building the web version: --
+- **--vfResetQuirk:** 
+The vfResetQuirk flag will ensure the V[F] register is set to 0 when performing &, |, ^ bitwise operations on registers. If this flag is not toggled the V[F] register will remain unchanged during these operations.
 
-- run npm -i (emcc needs typescript to generate types for the compiled javascript of the chip8)
-- npm run build:web (Will use emcc to compile the chip8 code into wasm, javascript, and its related typescript types. Will output into build/web directory.)
+
+- **--shiftingQuirk:** 
+The shiftingQuirk flag will ensure that V[x] is set to V[y] when executing the opcodes 8xy6 and 8xyE respectively. If this flag is not toggled then V[x] will not be set to V[y].
+
+## -- For building the web version: --
+
+- **run npm -i** 
+This command will install typescript locally in the project. Emcc needs typescript to generate types for the chip8.js it generates
+
+- **npm run build:web** 
+Will use emcc to compile the chip8 code into wasm, javascript, and its related typescript types. Will output into build/web directory.
 
 ## -- How to use the web version: --
 
@@ -50,10 +62,20 @@ After initializing your chip8 using javascript, there are a handful of exposed f
 
 ### Below is a summary of each exposed function that comes from the chip8 that you can use to interact with it through your frontends code:
 
-- web_reset_chip8(void); This will reset the state of the chip8 emulator, it will not reset memory. The timers, registers, stack, gfx, etc will be reset to 0.
-- web_toggle_pause_chip8(void); This will act as a toggle to pause/start emulator opcode execution and rendering. Simply sets a boolean to true/false depending on its original value.
-- web_toggle_logs(void); Will toggle logs to be enabled from the chip8. Useful for debugging if things are acting up. Logs will appear in the browser inspect console.
-- web_load_rom_chip8(const uint_8 *rom, const unsigned long size); This function will load a specified rom into the chip8's memory. Roms will have to live somewhere in your frontend for your browser to access them. You will need to load the rom as an array buffer in the form of a Uint8Array. You will then need to use the _malloc method to allocate memory according to the roms length and then use the pointer returned from _malloc to set the HEAPU8 property on the chip8 module to copy the rom into wasm memory. Since the rom is now in wasm memory, the chip8 can now use the pointer returned from _malloc to copy the data into chip8 memory. Below is an example of how to do this in javascript.
+- **web_reset_chip8(void);**
+This function will reset the state of the chip8 emulator, it will not reset memory. The timers, registers, stack, gfx, etc will be reset to 0.
+
+
+- **web_toggle_pause_chip8(void);** 
+This function will act as a toggle to pause/start emulator opcode execution and rendering. Simply sets a boolean to true/false depending on its original value.
+
+
+- **web_toggle_logs(void);** 
+This function will toggle logs to be enabled from the chip8. Useful for debugging if things are acting up. Logs will appear in the browser inspect console.
+
+
+- **web_load_rom_chip8(const uint_8 *rom, const unsigned long size);** 
+This function will load a specified rom into the chip8's memory. Roms will have to live somewhere in your frontend for your browser to access them. Below is an example of how to properly load a rom into your chip8 web build using javascript 
 
 ```
 const response = await fetch(`path to your chosen rom`);
