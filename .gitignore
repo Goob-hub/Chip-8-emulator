@@ -54,7 +54,6 @@ dkms.conf
 build
 
 SDL3/
-Roms/
 build/
 node_modules/
 

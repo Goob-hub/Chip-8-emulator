@@ -18,7 +18,6 @@ typedef struct {
 typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
-    SDL_Texture *bitmapTexture;
 } sdl_t;
 
 const SDL_Scancode keymap[16] = {
@@ -61,8 +60,6 @@ static bool init_sdl(sdl_t *sdl, const config_t config) {
     }
     
     sdl->renderer = SDL_CreateRenderer(sdl->window, -1, SDL_RENDERER_ACCELERATED);
-
-    sdl->bitmapTexture = SDL_CreateTexture(sdl->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, config.window_scale * config.window_width, config.window_scale * config.window_height);
 
     return true;
 }
@@ -195,15 +192,16 @@ int main(const int argc, const char **argv) {
             chip8_update_timers(&chip8);
 
             lastTimerTick = currentTime;
-
+            
             render(config, sdl, &chip8);
         }
-
+        
         if(currentTime - lastCpuTick >= (1000 / chip8.cpu_hz)) {
             if(!chip8.waitForFrame) {
                 chip8_cycle(&chip8);
-                lastCpuTick = currentTime;
             }
+            
+            lastCpuTick = currentTime;
         }
     }
 
