@@ -39,4 +39,9 @@ void chip8_update_timers(chip8_t *chip8);
  */
 void chip8_update_key_state(chip8_t *chip8, int8_t keyIndex, bool keyValue);
 
+/**
+ * Resets state of chip8. Does not clear memory.
+ */
+void chip8_reset_state(chip8_t *chip8);
+
 #endif /* CHIP8_H */

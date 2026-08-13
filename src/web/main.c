@@ -236,7 +236,7 @@ bool web_load_rom_chip8(const uint8_t *rom, const unsigned long size) {
 
 EMSCRIPTEN_KEEPALIVE
 void web_reset_chip8(void) {
-    chip8_init(&app.chip8, argv, argc);
+    chip8_reset_state(&app.chip8);
 
     app.lastCpuTick = 0;
     app.lastTimerTick = 0;
@@ -253,8 +253,6 @@ void web_toggle_logs(void) {
 }
 
 int main(void) {
-
-    // TODO: There is a bug in here somewhere. Future me please fix.
 
     setup_config(&app.config);
 

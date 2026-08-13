@@ -235,3 +235,16 @@ void chip8_cycle(chip8_t *chip8) {
 void chip8_update_key_state(chip8_t *chip8, int8_t keyIndex, bool keyValue) {
     chip8->key[keyIndex] = keyValue;
 }
+
+void chip8_reset_state(chip8_t *chip8) {
+    chip8->delay_timer = 0;
+    chip8->sound_timer = 0;
+    chip8->I = 0;
+    chip8->sp = 0;
+    chip8->pc = 0x200;
+
+    memset(chip8->V, 0, sizeof(chip8->V));
+    memset(chip8->stack, 0, sizeof(chip8->stack));
+    memset(chip8->gfx, 0, sizeof(chip8->gfx));
+    memset(chip8->key, 0, sizeof(chip8->key));
+}
