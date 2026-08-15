@@ -6,7 +6,7 @@ In order to build the web implementaion of the chip8, you need to install emcc v
 
 Also ensure that you have sdl2 somewhere on your system for the sdl native build.
 
-## For building the sdl version:
+## Building the desktop version:
 
 - **make sdl:** Will output the binary of the chip8 in build/sdl directories
 
@@ -29,7 +29,7 @@ The vfResetQuirk flag will ensure the V[F] register is set to 0 when performing 
 - **--shiftingQuirk:** 
 The shiftingQuirk flag will ensure that V[x] is set to V[y] when executing the opcodes 8xy6 and 8xyE respectively. If this flag is not toggled then V[x] will not be set to V[y].
 
-## For building the web version:
+## Building the web version:
 
 - **run npm -i** 
 This command will install typescript locally in the project. Emcc needs typescript to generate types for the chip8.js it generates
