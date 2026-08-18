@@ -40,8 +40,8 @@ const SDL_Scancode keymap[16] = {
 };
 
 static bool init_sdl(sdl_t *sdl, const config_t config) {
-    if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)){
-        printf("Error: SDL initialization failed");
+    if(SDL_Init(SDL_INIT_VIDEO) != 0){
+        fprintf(stderr, "SDL_Init failed: '%s'\n", SDL_GetError());
         return false;
     }
 
@@ -177,7 +177,7 @@ int main(const int argc, const char **argv) {
         SDL_Event event;
 
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_Quit) {
+            if (event.type == SDL_QUIT) {
                 done = true;
             }
 
