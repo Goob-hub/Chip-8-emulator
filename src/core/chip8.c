@@ -242,6 +242,7 @@ void chip8_reset_state(chip8_t *chip8) {
     chip8->I = 0;
     chip8->sp = 0;
     chip8->pc = 0x200;
+    chip8->isPaused = false;
 
     memset(chip8->V, 0, sizeof(chip8->V));
     memset(chip8->stack, 0, sizeof(chip8->stack));
