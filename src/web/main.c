@@ -1,4 +1,4 @@
-// #include <process.h> windows only
+// #include <process.h> 
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -68,7 +68,7 @@ static bool init_sdl(sdl_t *sdl, const config_t config) {
     }
 
     sdl->window = SDL_CreateWindow(
-        "My chip8 window",
+        "",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         config.window_width * config.window_scale,
