@@ -243,8 +243,10 @@ void web_reset_chip8(void) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-void web_toggle_pause_chip8(void) {
+bool web_toggle_pause_chip8(void) {
     app.chip8.isPaused = !app.chip8.isPaused;
+
+    return app.chip8.isPaused;
 }
 
 EMSCRIPTEN_KEEPALIVE
